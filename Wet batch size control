@@ -115,14 +115,14 @@
           }
           
           .form-row {
-              display: table;
+              display: block;
               width: 100%;
               margin-bottom: 15px;
               font-size: 14px;
               
               /*使用clearfix來清除浮動*/
               overflow: hidden;
-              zoom: 1; /*觸發IE的hasLayout*/
+              zoom: 1; /*觸發IE的hasLayouzoot*/
               
           }
           
@@ -139,10 +139,12 @@
           
           /* 每组（label + input）為一個cell */
           .form-group {
-              display: inline-block; 
-              vertical-align: middle;
-              width: auto; /* 自動寬度，平均分布 */ 
-              padding-right: 20px; /* 每組之間的間距 */
+              float: left;
+              margin-right: 20px;
+              margin-bottom: 10px;
+              vertical-align: top;
+              /*width: auto;*/ /* 自動寬度，平均分布 */ 
+              /*padding-right: 20px;*/ /* 每組之間的間距 */
           }
           
           /* 最後一組不需要右邊距 */
@@ -156,15 +158,18 @@
               color: #2c3e50;
               margin-right: 4px;
               white-space: nowrap;
-              vertical-align: middle; /* 垂直對齊 */
+              display: block;
+              /*vertical-align: middle;*/ /* 垂直對齊 */
+              margin-bottom: 3px;
               font-size: 14px;
           }
           
           .form-row input[type="text"],
           .form-row select
           {
-              display:inline-block;
-              vertical-align: middle; /* 垂直對齊 */
+              display: block;
+              /*vertical-align: middle;*/ /* 垂直對齊 */
+              width: 100%;
               font-size: 14px;
           }
           
@@ -173,11 +178,16 @@
               font-size: 14px;
               border-radius: 3px;
               border: 1px solid #bdc3c7;
+              /* IE兼容性 */
+              -webkit-box-sizing: border-box;
+              -moz-box-sizing: border-box;
+              box-sizing: border-box;
           }
           
           .form-control-sm:focus {
               border-color: var(--bs-primary); /* 使用 primary 顏色 */
               box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2);
+              outline: none;
           }
           
           .btn-custom {
@@ -296,49 +306,71 @@
           {
               width: 80px;
               font-size: 14px;
-              height: 20px;
+              height: 28px;
           }
           .input-medium  
           {
               width: 120px; 
               font-size: 14px;
-              height: 20px;
+              height: 28px;
           }
           .input-large  
           {
               width: 150px; 
               font-size: 14px;
-              height: 20px;
+              height: 28px;
           }
           .input-xlarge  
           {
               width: 200px; 
               font-size: 14px;
-              height: 20px;
+              height: 28px;
           }
           
           .main-content {
               position: relative;
               z-index: 2;
           }
+
+          /* IE6/7 hack */
+          * html .form-group {
+            display: inline;
+          }
+          
+          *:first-child+html .form-group {
+            display: inline;
+          }
           
           /* Responsive adjustments */
           @media (max-width: 768px) {
-              .form-row {
-                  flex-direction: column;
-                  align-items: flex-start;
+              .form-group {
+                float: none;
+                display: block;
+                width: 100%;
+                margin-right: 0;
               }
               
-              .section-header {
-                  flex-direction: column;
-                  gap: 10px;
-                  align-items: stretch;
+              .section-header h5 {
+                float: none;
+                margin-bottom: 10px;
               }
               
               .login-section {
-                  justify-content: center;
+                float: none;
+                text-align: center;
               }
-          }
+              
+              .filter-container {
+                display: block;
+              }
+              .filter-section,
+              .remarks-section {
+                display: block;
+                width: 100%;
+                margin-bottom: 15px;
+                padding-left: 15px;
+              }
+            }
       </style>
   </head>
   <body>
@@ -366,9 +398,9 @@
                           <input type="password" class="form-control form-control-sm input-medium">
                           <input type="checkbox" id="Checkbox1">
                           <label for="rememberMe" style="font-size: 13px;">記住密碼</label>
-                          <%--<button class="btn btn-login">登入帳號</button>--%>
                       </div>
                   </div>
+                  
                   <div class="form-row">
                     <div class="form-group">
                       <label>EQP_ID</label>
