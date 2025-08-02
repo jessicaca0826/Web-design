@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bootstrap 3 傳統方案 - Wet Batchsize Control</title>
-    <!-- Bootstrap 3.4.1 CSS -->
+    <title>Wet Batchsize Control</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
     
-    <!--[if IE 8]><body class="ie8"><![endif]-->
-    <!--[if IE 9]><body class="ie9"><![endif]-->
-    <!--[if !IE]><!--><body><!--<![endif]-->
-    
     <style>
+        :root {
+            --bs-primary: #007bff;
+            --bs-primary-hover: #0056b3;
+            --bs-primary-dark: #004085;
+        }
+        
         body {
             font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
             background-color: #ecf0f1;
@@ -19,8 +20,9 @@
         }
         
         .main-container {
-            max-width: 1800px;
-            margin: 0 auto;
+            max-width: 2000px;
+            margin: 20px auto;
+            padding: 0 15px;
         }
         
         .panel-custom {
@@ -28,10 +30,11 @@
             border: none;
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
         
         .panel-heading-custom {
-            background: #337ab7;
+            background: var(--bs-primary);
             color: white;
             padding: 15px;
             border-radius: 6px 6px 0 0;
@@ -48,18 +51,28 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #7b8a8b;
+            padding: 15px;
+        }
+        
+        .status-info div {
+            margin-bottom: 5px;
+        }
+        
+        .error-label {
+            color: #e74c3c;
+            font-size: 16px;
         }
         
         .section-header {
             background: #b4bcc2;
             color: white;
-            padding: 12px 15px;
+            padding: 8px 15px;
             font-weight: bold;
-            margin: 15px 0 15px 0;
+            margin: 15px 0 10px 0;
             border-radius: 4px;
             font-size: 16px;
             overflow: hidden;
-            zoom: 1; /* IE hasLayout trigger */
+            zoom: 1;
         }
         
         .section-header:before,
@@ -73,144 +86,169 @@
         }
         
         .section-header h5 {
+            float: left;
             margin: 0;
+            margin-right: 15px;
+            line-height: 32px;
             font-size: 16px;
             font-weight: bold;
-            float: left;
-            line-height: 24px;
         }
         
         .login-section {
             float: right;
-            margin-top: -2px;
+            vertical-align: middle;
         }
         
-        .login-section label {
-            font-size: 13px;
-            margin-right: 5px;
-            margin-bottom: 0;
-            font-weight: normal;
-            float: left;
-            line-height: 28px;
+        .login-section label,  
+        .login-section input,
+        .login-section button {
+            vertical-align: middle;
+            margin-right: 8px;
+            display: inline-block;
+        }
+        
+        .login-section label:last-of-type {
+            margin-right: 0;     
         }
         
         .login-section input[type="text"],
         .login-section input[type="password"] {
-            width: 100px;
+            width: 140px;
             height: 28px;
             padding: 4px 8px;
             font-size: 12px;
-            float: left;
-            margin-right: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
         }
         
-        .login-section .checkbox-inline {
-            float: left;
-            margin-right: 8px;
-            padding-left: 0;
-            margin-top: 4px;
+        .login-section input[type="checkbox"] {
+            margin-right: 5px;
+            vertical-align: middle;
         }
         
-        .login-section .checkbox-inline input {
-            margin-right: 3px;
+        .login-section label {
+            font-size: 13px;
+            margin-bottom: 0;
+            font-weight: normal;
+            line-height: 28px;
         }
         
-        .login-section .checkbox-inline label {
-            font-size: 12px;
-            line-height: 20px;
-            padding-left: 0;
-        }
-        
-        .login-section .btn {
-            float: left;
-            height: 28px;
+        .btn-login {
+            background: var(--bs-primary);
+            border: 1px solid var(--bs-primary);
+            color: white;
             padding: 4px 12px;
             font-size: 12px;
+            border-radius: 3px;
+            height: 28px;
         }
         
-        /* 表單區域 - 純浮動佈局 */
-        .form-row-bootstrap {
-            margin: 15px 0;
+        .btn-login:hover {
+            background: var(--bs-primary-hover);
+            color: white;
+        }
+        
+        .form-row {
+            margin-bottom: 15px;
+            font-size: 14px;
             overflow: hidden;
-            zoom: 1; /* IE hasLayout trigger */
+            zoom: 1;
         }
         
-        .form-row-bootstrap:before,
-        .form-row-bootstrap:after {
+        .form-row:before,
+        .form-row:after {
             content: "";
             display: table;
         }
         
-        .form-row-bootstrap:after {
+        .form-row:after {
             clear: both;
         }
         
-        .form-group-inline {
+        .form-group {
             float: left;
-            margin-right: 15px;
+            margin-right: 20px;
             margin-bottom: 10px;
         }
         
-        .form-group-inline:last-child {
+        .form-group:last-child {
             margin-right: 0;
         }
         
-        .form-group-inline label {
+        .form-group label {
             font-weight: bold;
             color: #2c3e50;
-            font-size: 13px;
-            margin-bottom: 3px;
-            display: block;
+            margin-right: 4px;
             white-space: nowrap;
+            vertical-align: middle;
+            font-size: 14px;
+            display: block;
+            margin-bottom: 3px;
         }
         
-        .form-group-inline .form-control,
-        .form-group-inline .btn {
-            height: 30px;
-            font-size: 13px;
-        }
-        
-        .form-group-inline select.form-control {
-            height: 30px;
+        .form-control {
+            display: inline-block !important;
+            vertical-align: top;
+            font-size: 14px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
             padding: 4px 8px;
         }
         
-        /* 自定義 input 寬度 */
-        .input-xs { width: 70px; }
-        .input-sm { width: 100px; }
-        .input-md { width: 140px; }
-        .input-lg { width: 180px; }
+        .form-control:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        
+        .form-control-sm {
+            padding: 4px 8px;
+            font-size: 14px;
+            border-radius: 3px;
+            border: 1px solid #bdc3c7;
+            height: 25px;
+        }
+        
+        .input-small { width: 80px; }
+        .input-medium { width: 140px; }
+        .input-large { width: 150px; }
+        .input-xlarge { width: 200px; }
         
         .btn-custom {
-            background: #337ab7;
-            border-color: #2e6da4;
+            background: var(--bs-primary);
+            border: 1px solid var(--bs-primary);
             color: white;
-            height: 30px;
             padding: 4px 12px;
             font-size: 12px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            height: 25px;
         }
         
-        .btn-custom:hover,
-        .btn-custom:focus {
-            background: #286090;
-            border-color: #204d74;
+        .btn-custom:hover {
+            background: var(--bs-primary-hover);
+            border-color: var(--bs-primary-dark);
             color: white;
         }
         
-        /* 篩選區域 - 純浮動佈局 */
-        .filter-panel {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 15px;
+        .filter-section-container {
+            display: table;
+            width: 100%;
             margin: 15px 0;
-            border-left: 4px solid #337ab7;
+        }
+        
+        .filter-section {
+            display: table-cell;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid var(--bs-primary);
+            vertical-align: top;
         }
         
         .filter-controls {
             overflow: hidden;
             zoom: 1;
-            margin-bottom: 10px;
         }
         
         .filter-controls:before,
@@ -223,47 +261,27 @@
             clear: both;
         }
         
-        .filter-controls .form-group {
+        .filter-controls > * {
             float: left;
-            margin-right: 15px;
-            margin-bottom: 0;
+            margin-right: 8px;
+            vertical-align: middle;
         }
         
-        .filter-controls .form-group:last-child {
-            margin-right: 0;
-        }
-        
-        .filter-controls label {
+        .filter-section label {
             font-size: 13px;
             font-weight: 500;
             color: #2c3e50;
-            margin-right: 5px;
-            margin-bottom: 0;
-            float: left;
-            line-height: 28px;
+            margin: 0;
+            line-height: 25px;
         }
         
-        .filter-controls .form-control {
-            width: auto;
-            height: 28px;
-            padding: 4px 8px;
-            font-size: 12px;
-            float: left;
+        .remarks-section {
+            display: table-cell;
+            padding-left: 20px;
+            vertical-align: top;
         }
         
-        .filter-controls .btn {
-            height: 28px;
-            padding: 4px 8px;
-            font-size: 12px;
-            float: left;
-        }
-        
-        .remarks-area {
-            clear: both;
-            margin-top: 15px;
-        }
-        
-        .remarks-area label {
+        .remarks-section label {
             font-size: 13px;
             font-weight: 500;
             color: #2c3e50;
@@ -271,45 +289,57 @@
             margin-bottom: 5px;
         }
         
-        .remarks-textarea {
+        .form-control-textarea {
             width: 100%;
-            max-width: 400px;
+            max-width: 350px;
             height: 70px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            padding: 8px;
             font-size: 12px;
             resize: vertical;
+            display: block;
         }
         
-        /* 表格樣式 */
+        .form-control-textarea:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        
         .table-custom {
+            width: 100%;
             font-size: 12px;
             margin-top: 15px;
+            border-collapse: collapse;
             background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        .table-custom > thead > tr > th {
-            background: #337ab7;
+        .table-custom th {
+            background: var(--bs-primary);
             color: white;
-            border-color: #337ab7;
+            padding: 10px 8px;
             text-align: center;
             font-weight: 500;
-            padding: 8px 6px;
-            vertical-align: middle;
+            border: none;
         }
         
-        .table-custom > tbody > tr > td {
+        .table-custom td {
+            padding: 8px;
             text-align: center;
-            padding: 6px 4px;
-            vertical-align: middle;
-            font-size: 11px;
+            border-bottom: 1px solid #ecf0f1;
+            border-right: 1px solid #ecf0f1;
         }
         
-        .table-custom > tbody > tr:hover {
+        .table-custom tbody tr:hover {
             background-color: #f8f9fa;
         }
         
         .modify-cell {
             background-color: #f8f9fa !important;
-            width: 120px;
         }
         
         .modify-cell select {
@@ -318,17 +348,11 @@
             padding: 2px 4px;
         }
         
-        /* 響應式調整 - 使用傳統的媒體查詢 */
-        @media (max-width: 1200px) {
-            .form-group-inline {
-                margin-right: 10px;
-            }
-        }
-        
+        /* 響應式調整 */
         @media (max-width: 768px) {
             .section-header {
-                text-align: center;
-                padding-bottom: 15px;
+                text-align: left;
+                padding: 15px;
             }
             
             .section-header h5 {
@@ -339,92 +363,67 @@
             
             .login-section {
                 float: none;
-                margin-top: 0;
-                text-align: center;
+                margin-top: 10px;
                 clear: both;
             }
             
             .login-section label,
             .login-section input,
-            .login-section .checkbox-inline,
-            .login-section .btn {
-                float: none;
-                display: inline-block;
+            .login-section button {
+                display: block;
                 margin-bottom: 5px;
-                vertical-align: middle;
+                margin-right: 0;
+                width: 100%;
             }
             
-            .form-group-inline {
+            .login-section input[type="checkbox"] {
+                width: auto;
+                display: inline-block;
+            }
+            
+            .form-group {
                 float: none;
                 display: block;
                 margin-bottom: 15px;
                 width: 100%;
             }
             
-            .form-group-inline .form-control,
-            .form-group-inline .btn {
-                width: 100%;
+            .form-control {
+                width: 100% !important;
             }
             
-            .filter-controls .form-group {
+            .filter-section-container {
+                display: block;
+            }
+            
+            .filter-section,
+            .remarks-section {
+                display: block;
+                margin-bottom: 15px;
+            }
+            
+            .filter-controls > * {
                 float: none;
                 display: block;
-                margin-bottom: 10px;
-            }
-            
-            .filter-controls label,
-            .filter-controls .form-control,
-            .filter-controls .btn {
-                float: none;
-                display: inline-block;
-                margin-right: 5px;
+                margin-bottom: 5px;
+                margin-right: 0;
             }
         }
         
-        /* IE 特殊處理 */
-        .ie8 .form-group-inline,
-        .ie9 .form-group-inline {
+        /* IE 兼容性 */
+        .ie8 .form-group,
+        .ie9 .form-group {
             display: block;
             zoom: 1;
-        }
-        
-        .ie8 .filter-controls .form-group,
-        .ie9 .filter-controls .form-group {
-            display: block;
-            zoom: 1;
-        }
-        
-        .ie8 .login-section label,
-        .ie8 .login-section input,
-        .ie8 .login-section .btn,
-        .ie9 .login-section label,
-        .ie9 .login-section input,
-        .ie9 .login-section .btn {
-            zoom: 1;
-        }
-        
-        /* 清除浮動 utility class */
-        .clearfix:before,
-        .clearfix:after {
-            content: " ";
-            display: table;
-        }
-        
-        .clearfix:after {
-            clear: both;
-        }
-        
-        .clearfix {
-            zoom: 1; /* IE6-7 */
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid main-container">
-        <div class="panel panel-default panel-custom">
+    <div class="main-container">
+        <div class="panel-custom">
             <!-- 標題區域 -->
-            <div class="panel-heading panel-heading-custom">
-                <h1 class="panel-title panel-title-custom">WET BATCH SIZE CONTROL</h1>
+            <div class="panel-heading-custom">
+                <h1 class="panel-title-custom">WET BATCH SIZE CONTROL</h1>
             </div>
             
             <div class="panel-body">
@@ -436,106 +435,95 @@
                 </div>
                 
                 <!-- 新增設定區域 -->
-                <div class="section-header clearfix">
+                <div class="section-header">
                     <h5>Add New Setting</h5>
-                    <div class="login-section clearfix">
+                    <div class="login-section">
                         <label>ID:</label>
                         <input type="text" class="form-control">
                         <label>Password:</label>
                         <input type="password" class="form-control">
-                        <div class="checkbox-inline">
-                            <label><input type="checkbox"> 記住密碼</label>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-sm">登入</button>
+                        <input type="checkbox" id="rememberMe">
+                        <label for="rememberMe">記住密碼</label>
+                        <button type="button" class="btn-login">登入</button>
                     </div>
                 </div>
                 
-                <!-- 表單區域 - 純浮動佈局 -->
-                <div class="form-row-bootstrap clearfix">
-                    <div class="form-group-inline">
+                <!-- 表單區域 -->
+                <div class="form-row">
+                    <div class="form-group">
                         <label>EQP_ID</label>
-                        <input type="text" class="form-control input-xs">
+                        <input type="text" class="form-control form-control-sm input-small">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>PRODG_ID</label>
-                        <input type="text" class="form-control input-sm">
+                        <input type="text" class="form-control form-control-sm input-medium">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>PRODUCT_GROUP</label>
-                        <input type="text" class="form-control input-md">
+                        <input type="text" class="form-control form-control-sm input-medium">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>PRODSPEC_ID</label>
-                        <input type="text" class="form-control input-md">
+                        <input type="text" class="form-control form-control-sm input-medium">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>OPE_NO</label>
-                        <input type="text" class="form-control input-xs">
+                        <input type="text" class="form-control form-control-sm input-small">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>BATCH_SIZE</label>
-                        <select class="form-control input-xs">
+                        <select class="form-control form-control-sm input-small">
                             <option>25</option>
                             <option>50</option>
                             <option>100</option>
                         </select>
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>MIN_BATCH_WAFER</label>
-                        <input type="text" class="form-control input-sm">
+                        <input type="text" class="form-control form-control-sm input-small">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>MEMO</label>
-                        <input type="text" class="form-control input-lg">
+                        <input type="text" class="form-control form-control-sm input-large">
                     </div>
-                    <div class="form-group-inline">
+                    <div class="form-group">
                         <label>&nbsp;</label>
-                        <button type="button" class="btn btn-custom">新增</button>
+                        <button class="btn btn-custom">新增</button>
                     </div>
                 </div>
                 
                 <!-- 篩選區域 -->
-                <div class="filter-panel">
-                    <div class="filter-controls clearfix">
-                        <div class="form-group">
+                <div class="filter-section-container">
+                    <div class="filter-section">
+                        <div class="filter-controls">
                             <label>Filter:</label>
-                            <select class="form-control" style="width: 100px;">
+                            <select class="form-control form-control-sm input-small">
                                 <option>EQP_ID</option>
                                 <option>PRODG_ID</option>
                                 <option>PRODUCT_GROUP</option>
                                 <option>PRODSPEC_ID</option>
                                 <option>OPE_NO</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <select class="form-control" style="width: 60px;">
+                            <select class="form-control form-control-sm input-small">
                                 <option>=</option>
                                 <option>!=</option>
                                 <option>LIKE</option>
                                 <option>></option>
                                 <option><</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" class="form-control" style="width: 150px;" placeholder="輸入條件值">
-                        </div>
-                        <div class="form-group">
-                            <select class="form-control" style="width: 60px;">
+                            <input type="text" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
+                            <select class="form-control form-control-sm input-small">
                                 <option>AND</option>
                                 <option>OR</option>
                             </select>
-                        </div>
-                        <div class="form-group">
                             <button type="button" class="btn btn-info btn-sm">執行篩選</button>
-                        </div>
-                        <div class="form-group">
                             <button type="button" class="btn btn-warning btn-sm">清除條件</button>
                         </div>
                     </div>
                     
-                    <div class="remarks-area">
+                    <div class="remarks-section">
                         <label>Remark:</label>
-                        <textarea class="form-control remarks-textarea" placeholder="1. 歷史設定檔參考連結&#10;2. 相關注意事項&#10;3. 操作說明"></textarea>
+                        <textarea class="form-control-textarea" placeholder="1. 歷史設定檔參考連結&#10;2. 相關注意事項&#10;3. 操作說明"></textarea>
                     </div>
                 </div>
                 
@@ -543,7 +531,7 @@
                 <div class="section-header">Current Setting</div>
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-custom">
+                    <table class="table-custom">
                         <thead>
                             <tr>
                                 <th class="modify-cell">Modify<br><small>更新/取消更新/刪除</small></th>
@@ -630,34 +618,6 @@
                                     <input type="checkbox" checked>
                                 </td>
                             </tr>
-                            <!-- 空白行供新增資料使用 -->
-                            <tr style="background-color: #f9f9f9;">
-                                <td class="modify-cell">
-                                    <select class="form-control">
-                                        <option>選擇動作</option>
-                                        <option value="add">新增</option>
-                                    </select>
-                                </td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td>
-                                    <select class="form-control" style="font-size: 10px; height: 22px; padding: 2px;">
-                                        <option>25</option>
-                                        <option>50</option>
-                                        <option>100</option>
-                                    </select>
-                                </td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td><input type="text" class="form-control" style="font-size: 10px; height: 22px; padding: 2px;"></td>
-                                <td style="color: #999;">AUTO</td>
-                                <td style="color: #999;">AUTO</td>
-                                <td>
-                                    <input type="checkbox" checked>
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -667,48 +627,28 @@
                     <strong>📋 操作說明：</strong><br>
                     • 上方表單可新增設定，填寫完畢後點擊「新增」按鈕<br>
                     • 篩選區域可設定查詢條件，支援多重條件組合<br>
-                    • 表格中可直接修改現有設定，或在最後一行新增資料<br>
+                    • 表格中可直接修改現有設定<br>
                     • 勾選「啟用」可控制設定是否生效
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Bootstrap 3.4.1 JavaScript (支援 IE8+) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
     
     <script>
-        // IE 版本檢測（用於除錯）
-        (function() {
-            var ua = navigator.userAgent;
-            var ie = ua.indexOf('MSIE ');
-            var ie11 = ua.indexOf('Trident/');
-            
-            if (ie > 0) {
-                var version = parseInt(ua.substring(ie + 5, ua.indexOf('.', ie)), 10);
-                document.body.className += ' ie' + version;
-                console.log('檢測到 IE' + version);
-            } else if (ie11 > 0) {
-                document.body.className += ' ie11';
-                console.log('檢測到 IE11');
-            }
-        })();
-        
         $(document).ready(function() {
-            console.log('頁面載入完成，jQuery 版本:', $.fn.jquery);
-            
             // 新增按鈕功能
             $('.btn-custom').click(function() {
                 var formData = {};
                 var hasError = false;
                 
-                // 收集表單資料
-                $('.form-row-bootstrap .form-group-inline').each(function() {
+                $('.form-row .form-group').each(function() {
                     var label = $(this).find('label').text().trim();
                     var input = $(this).find('input, select');
                     
-                    if (label && label !== '' && input.length > 0) {
+                    if (label && label !== '' && label !== ' ' && input.length > 0) {
                         formData[label] = input.val();
                     }
                 });
@@ -716,31 +656,28 @@
                 // 驗證必填欄位
                 if (!formData['EQP_ID'] || formData['EQP_ID'].trim() === '') {
                     alert('請填寫 EQP_ID');
-                    $('.form-row-bootstrap .form-group-inline').eq(0).find('input').focus();
+                    $('.form-row .form-group').eq(0).find('input').focus();
                     return;
                 }
                 
                 if (!formData['PRODG_ID'] || formData['PRODG_ID'].trim() === '') {
                     alert('請填寫 PRODG_ID');
-                    $('.form-row-bootstrap .form-group-inline').eq(1).find('input').focus();
+                    $('.form-row .form-group').eq(1).find('input').focus();
                     return;
                 }
                 
                 console.log('新增資料:', formData);
-                alert('資料驗證通過！\n\n' + 
-                      'EQP_ID: ' + formData['EQP_ID'] + '\n' +
-                      'PRODG_ID: ' + formData['PRODG_ID'] + '\n\n' +
-                      '實際應用中，這裡會送出資料到伺服器。');
+                alert('資料驗證通過！資料已送出新增');
                 
                 // 清空表單
-                $('.form-row-bootstrap input, .form-row-bootstrap select').val('');
+                $('.form-row input, .form-row select').val('');
             });
             
             // 登入按鈕功能
-            $('.login-section .btn').click(function() {
+            $('.btn-login').click(function() {
                 var id = $('.login-section input[type="text"]').val();
                 var password = $('.login-section input[type="password"]').val();
-                var remember = $('.login-section input[type="checkbox"]').is(':checked');
+                var remember = $('#rememberMe').is(':checked');
                 
                 if (!id || id.trim() === '') {
                     alert('請輸入帳號');
@@ -755,14 +692,15 @@
                 }
                 
                 console.log('登入資訊:', {id: id, remember: remember});
-                alert('登入驗證通過！\n\n' +
-                      'ID: ' + id + '\n' +
-                      '記住密碼: ' + (remember ? '是' : '否') + '\n\n' +
-                      '實際應用中，這裡會進行身份驗證。');
+                alert('登入成功！\nID: ' + id + (remember ? '\n已記住密碼' : ''));
+                
+                // 清空登入表單
+                $('.login-section input').val('');
+                $('#rememberMe').prop('checked', false);
             });
             
             // 篩選功能
-            $('.filter-controls .btn-info').click(function() {
+            $('.btn-info').click(function() {
                 var field = $('.filter-controls select').eq(0).val();
                 var operator = $('.filter-controls select').eq(1).val();
                 var value = $('.filter-controls input[type="text"]').val();
@@ -781,17 +719,18 @@
                     logic: logic
                 });
                 
-                // 簡單的篩選模擬
-                var matchingRows = 0;
-                $('.table-custom tbody tr').each(function() {
-                    var row = $(this);
-                    if (row.find('input[type="text"]').length > 0) return; // 跳過編輯行
-                    
-                    var cellValue = '';
-                    switch(field) {
-                        case 'EQP_ID': cellValue = row.find('td').eq(1).text(); break;
-                        case 'PRODG_ID': cellValue = row.find('td').eq(2).text(); break;
-                        case 'PRODUCT_GROUP': cellValue = row.find('td').eq(3).text(); break;
-                        case 'PRODSPEC_ID': cellValue = row.find('td').eq(4).text(); break;
-                        case 'OPE_NO': cellValue = row.find('td').eq(5).text(); break;
-                    }
+                alert('篩選功能執行中...\n條件: ' + field + ' ' + operator + ' ' + value);
+            });
+            
+            // 清除條件
+            $('.btn-warning').click(function() {
+                $('.filter-controls input[type="text"]').val('');
+                $('.filter-controls select').each(function() {
+                    $(this).prop('selectedIndex', 0);
+                });
+                alert('篩選條件已清除');
+            });
+        });
+    </script>
+</body>
+</html>
