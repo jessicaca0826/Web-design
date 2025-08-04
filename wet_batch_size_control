@@ -4,19 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wet Batchsize Control</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/bootstrap.flaty.min.css" rel="stylesheet">
     
     <style>
-        :root {
-            --bs-primary: #007bff;
-            --bs-primary-hover: #0056b3;
-            --bs-primary-dark: #004085;
-        }
-        
         body {
             font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
             background-color: #ecf0f1;
-            padding-top: 20px;
+            /*padding-top: 20px;*/
         }
         
         .main-container {
@@ -33,15 +27,13 @@
             overflow: hidden;
         }
         
-        .panel-heading-custom {
-            background: var(--bs-primary);
+        .panel-primary {
             color: white;
-            padding: 15px;
             border-radius: 6px 6px 0 0;
             margin-bottom: 0;
         }
         
-        .panel-title-custom {
+        .panel-heading {
             font-weight: bold;
             font-size: 18px;
             margin: 0;
@@ -51,7 +43,6 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #7b8a8b;
-            padding: 15px;
         }
         
         .status-info div {
@@ -70,11 +61,12 @@
             font-weight: bold;
             margin: 15px 0 10px 0;
             border-radius: 4px;
-            font-size: 16px;
-            overflow: hidden;
+            font-size: 16px; /*使用clearfix來清除浮動*/
+            overflow: hidden; /*觸發IE的hasLayout*/
             zoom: 1;
         }
         
+        /*為IE6/7添加 clearfix*/
         .section-header:before,
         .section-header:after {
             content: "";
@@ -85,24 +77,24 @@
             clear: both;
         }
         
+        /*僅針對.section-header下的h5進行樣式重置*/
         .section-header h5 {
-            float: left;
+            float: left; /*左浮動*/
             margin: 0;
-            margin-right: 15px;
-            line-height: 32px;
+            margin-right: 15px; /* 與右側內容保值間距 */
+            line-height: 32px; /* 與右側輸入框高度對齊 */
             font-size: 16px;
             font-weight: bold;
         }
         
         .login-section {
             float: right;
-            vertical-align: middle;
+            vertical-align: middle; /*垂直對齊*/
         }
         
         .login-section label,  
-        .login-section input,
-        .login-section button {
-            vertical-align: middle;
+        .login-section input{
+            vertical-align: middle; /*垂直對齊*/
             margin-right: 8px;
             display: inline-block;
         }
@@ -114,7 +106,7 @@
         .login-section input[type="text"],
         .login-section input[type="password"] {
             width: 140px;
-            height: 28px;
+            height: 20px;
             padding: 4px 8px;
             font-size: 12px;
             border: 1px solid #bdc3c7;
@@ -127,34 +119,20 @@
         }
         
         .login-section label {
-            font-size: 13px;
+            font-size: 14px;
             margin-bottom: 0;
-            font-weight: normal;
+            font-weight: bold;
             line-height: 28px;
-        }
-        
-        .btn-login {
-            background: var(--bs-primary);
-            border: 1px solid var(--bs-primary);
-            color: white;
-            padding: 4px 12px;
-            font-size: 12px;
-            border-radius: 3px;
-            height: 28px;
-        }
-        
-        .btn-login:hover {
-            background: var(--bs-primary-hover);
-            color: white;
         }
         
         .form-row {
             margin-bottom: 15px;
             font-size: 14px;
-            overflow: hidden;
-            zoom: 1;
+            overflow: hidden; /*使用clearfix來清除浮動*/
+            zoom: 1; /*觸發IE的hasLayout*/
         }
         
+        /*為IE6/7添加 clearfix*/
         .form-row:before,
         .form-row:after {
             content: "";
@@ -180,7 +158,7 @@
             color: #2c3e50;
             margin-right: 4px;
             white-space: nowrap;
-            vertical-align: middle;
+            vertical-align: middle; /* 垂直對齊 */
             font-size: 14px;
             display: block;
             margin-bottom: 3px;
@@ -196,54 +174,63 @@
         }
         
         .form-control:focus {
-            border-color: var(--bs-primary);
+            border-color: #2c3e50;
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
             outline: none;
         }
         
         .form-control-sm {
-            padding: 4px 8px;
-            font-size: 14px;
-            border-radius: 3px;
-            border: 1px solid #bdc3c7;
-            height: 25px;
+            height: 28px;
         }
         
+        /*輸入框尺寸*/
         .input-small { width: 80px; }
         .input-medium { width: 140px; }
         .input-large { width: 150px; }
         .input-xlarge { width: 200px; }
         
         .btn-custom {
-            background: var(--bs-primary);
-            border: 1px solid var(--bs-primary);
+            background: #b4bcc2;
+            border: 1px solid #b4bcc2;
             color: white;
             padding: 4px 12px;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: bold;
             border-radius: 3px;
             transition: all 0.3s ease;
-            height: 25px;
+            height: 28px;
         }
         
         .btn-custom:hover {
-            background: var(--bs-primary-hover);
-            border-color: var(--bs-primary-dark);
+            background: #2c3e50;
+            border-color: #2c3e50;
             color: white;
         }
         
         .filter-section-container {
-            display: table;
-            width: 100%;
+            overflow: hidden;
+            zoom: 1;
             margin: 15px 0;
+            vertical-align: middle;
+        }
+        
+        filter-section-container:before,
+        filter-section-container:after {
+            content: "";
+            display: table;
+        }
+        
+        filter-section-container:after {
+            clear: both;
         }
         
         .filter-section {
-            display: table-cell;
+            float: left;
+            width: 60%;
             padding: 15px;
             background-color: #f8f9fa;
             border-radius: 4px;
-            border-left: 4px solid var(--bs-primary);
-            vertical-align: top;
+            border-left: 4px solid #b4bcc2;
         }
         
         .filter-controls {
@@ -268,25 +255,16 @@
         }
         
         .filter-section label {
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: bold;
             color: #2c3e50;
-            margin: 0;
             line-height: 25px;
         }
         
         .remarks-section {
-            display: table-cell;
-            padding-left: 20px;
-            vertical-align: top;
-        }
-        
-        .remarks-section label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #2c3e50;
-            display: block;
-            margin-bottom: 5px;
+            float: left;
+            width: 35%;
+            padding: 0 15px 20px;
         }
         
         .form-control-textarea {
@@ -302,9 +280,18 @@
         }
         
         .form-control-textarea:focus {
-            border-color: var(--bs-primary);
+            border-color: #b4bcc2;
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
             outline: none;
+        }
+        
+        .remarks-text
+        {
+            background-color: #f8f9fa; /*淺灰背景*/
+            color: #495057; /*深灰文字*/
+            cursor: default; /*默認鼠標樣式*/
+            overflow-y: auto; /*內容過多時可滑動*/
+            line-height: 1.5; /*行距*/
         }
         
         .table-custom {
@@ -319,11 +306,11 @@
         }
         
         .table-custom th {
-            background: var(--bs-primary);
+            background: #2c3e50;
             color: white;
             padding: 10px 8px;
             text-align: center;
-            font-weight: 500;
+            font-weight: bold;
             border: none;
         }
         
@@ -339,13 +326,18 @@
         }
         
         .modify-cell {
-            background-color: #f8f9fa !important;
+            background-color: #faf9fa !important;
         }
         
         .modify-cell select {
             font-size: 10px;
             height: 24px;
             padding: 2px 4px;
+        }
+        
+        .main-content {
+            position: relative;
+            z-index: 2;
         }
         
         /* 響應式調整 */
@@ -368,8 +360,7 @@
             }
             
             .login-section label,
-            .login-section input,
-            .login-section button {
+            .login-section input {
                 display: block;
                 margin-bottom: 5px;
                 margin-right: 0;
@@ -392,13 +383,15 @@
                 width: 100% !important;
             }
             
-            .filter-section-container {
+            /*.filter-section-container {
                 display: block;
-            }
+            }*/
             
             .filter-section,
             .remarks-section {
-                display: block;
+                float: none;
+                /*display: block;*/
+                width: 100%;
                 margin-bottom: 15px;
             }
             
@@ -416,14 +409,28 @@
             display: block;
             zoom: 1;
         }
+        
+        .ie8 .filter-controls > *,
+        .ie9 .filter-controls > * {
+            display: block;
+            zoom: 1;
+        }
+        
+        .ie8 .login-section label,
+        .ie8 .login-section input,
+        .ie9 .login-section label,
+        .ie9 .login-section input {
+            zoom: 1;
+        }
+        
     </style>
 </head>
 <body>
     <div class="main-container">
-        <div class="panel-custom">
+        <div class="panel-custom main-content">
             <!-- 標題區域 -->
-            <div class="panel-heading-custom">
-                <h1 class="panel-title-custom">WET BATCH SIZE CONTROL</h1>
+            <div class="panel-primary">
+                <h1 class="panel-heading">WET BATCH SIZE CONTROL</h1>
             </div>
             
             <div class="panel-body">
@@ -444,7 +451,7 @@
                         <input type="password" class="form-control">
                         <input type="checkbox" id="rememberMe">
                         <label for="rememberMe">記住密碼</label>
-                        <button type="button" class="btn-login">登入</button>
+                        <%--<button type="button" class="btn-login">登入</button>--%>
                     </div>
                 </div>
                 
@@ -473,9 +480,9 @@
                     <div class="form-group">
                         <label>BATCH_SIZE</label>
                         <select class="form-control form-control-sm input-small">
-                            <option>25</option>
-                            <option>50</option>
-                            <option>100</option>
+                            <option>請選擇</option>
+                            <option>1</option>
+                            <option>2</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -497,33 +504,44 @@
                     <div class="filter-section">
                         <div class="filter-controls">
                             <label>Filter:</label>
-                            <select class="form-control form-control-sm input-small">
+                            <select class="form-control form-control-sm input-medium">
                                 <option>EQP_ID</option>
                                 <option>PRODG_ID</option>
                                 <option>PRODUCT_GROUP</option>
                                 <option>PRODSPEC_ID</option>
                                 <option>OPE_NO</option>
                             </select>
-                            <select class="form-control form-control-sm input-small">
-                                <option>=</option>
-                                <option>!=</option>
-                                <option>LIKE</option>
-                                <option>></option>
-                                <option><</option>
+                            <select class="form-control form-control-sm input-medium">
+                                <option>等於</option>
+                                <option>不等於</option>
+                                <option>大於</option>
+                                <option>大於等於</option>
+                                <option>小於</option>
+                                <option>小於等於</option>
+                                <option>開頭以</option>
+                                <option>結尾以</option>
+                                <option>不開頭以</option>
+                                <option>不結尾以</option>
+                                <option>包含</option>
+                                <option>不包含</option>
                             </select>
                             <input type="text" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
                             <select class="form-control form-control-sm input-small">
                                 <option>AND</option>
                                 <option>OR</option>
                             </select>
-                            <button type="button" class="btn btn-info btn-sm">執行篩選</button>
-                            <button type="button" class="btn btn-warning btn-sm">清除條件</button>
+                            <button type="button" class="btn btn-default btn-sm">執行篩選</button>
+                            <button type="button" class="btn btn-primary btn-sm">清除條件</button>
                         </div>
                     </div>
                     
                     <div class="remarks-section">
-                        <label>Remark:</label>
-                        <textarea class="form-control-textarea" placeholder="1. 歷史設定檔參考連結&#10;2. 相關注意事項&#10;3. 操作說明"></textarea>
+                        <div class="form-control-textarea remarks-text">
+                        <span style="color: Red; font-weight:bold">Remarks:</span><br>
+                        1. 歷史設定檔參考連結<br>
+                        2. 相關注意事項<br>
+                        3. 操作說明
+                        </div>
                     </div>
                 </div>
                 
@@ -534,7 +552,7 @@
                     <table class="table-custom">
                         <thead>
                             <tr>
-                                <th class="modify-cell">Modify<br><small>更新/取消更新/刪除</small></th>
+                                <th >Modify</th>
                                 <th>EQP_ID</th>
                                 <th>PRODG_ID</th>
                                 <th>PRODUCT_GROUP</th>
@@ -638,94 +656,68 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
     
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // 新增按鈕功能
-            $('.btn-custom').click(function() {
+            $('.btn-custom').click(function () {
                 var formData = {};
                 var hasError = false;
-                
-                $('.form-row .form-group').each(function() {
+
+                $('.form-row .form-group').each(function () {
                     var label = $(this).find('label').text().trim();
                     var input = $(this).find('input, select');
-                    
+
                     if (label && label !== '' && label !== ' ' && input.length > 0) {
                         formData[label] = input.val();
                     }
                 });
-                
+
                 // 驗證必填欄位
                 if (!formData['EQP_ID'] || formData['EQP_ID'].trim() === '') {
                     alert('請填寫 EQP_ID');
                     $('.form-row .form-group').eq(0).find('input').focus();
                     return;
                 }
-                
+
                 if (!formData['PRODG_ID'] || formData['PRODG_ID'].trim() === '') {
                     alert('請填寫 PRODG_ID');
                     $('.form-row .form-group').eq(1).find('input').focus();
                     return;
                 }
-                
+
                 console.log('新增資料:', formData);
                 alert('資料驗證通過！資料已送出新增');
-                
+
                 // 清空表單
                 $('.form-row input, .form-row select').val('');
             });
-            
-            // 登入按鈕功能
-            $('.btn-login').click(function() {
-                var id = $('.login-section input[type="text"]').val();
-                var password = $('.login-section input[type="password"]').val();
-                var remember = $('#rememberMe').is(':checked');
-                
-                if (!id || id.trim() === '') {
-                    alert('請輸入帳號');
-                    $('.login-section input[type="text"]').focus();
-                    return;
-                }
-                
-                if (!password || password.trim() === '') {
-                    alert('請輸入密碼');
-                    $('.login-section input[type="password"]').focus();
-                    return;
-                }
-                
-                console.log('登入資訊:', {id: id, remember: remember});
-                alert('登入成功！\nID: ' + id + (remember ? '\n已記住密碼' : ''));
-                
-                // 清空登入表單
-                $('.login-section input').val('');
-                $('#rememberMe').prop('checked', false);
-            });
-            
+
             // 篩選功能
-            $('.btn-info').click(function() {
+            $('.btn-default').click(function () {
                 var field = $('.filter-controls select').eq(0).val();
                 var operator = $('.filter-controls select').eq(1).val();
                 var value = $('.filter-controls input[type="text"]').val();
                 var logic = $('.filter-controls select').eq(2).val();
-                
+
                 if (!value || value.trim() === '') {
                     alert('請輸入篩選條件值');
                     $('.filter-controls input[type="text"]').focus();
                     return;
                 }
-                
+
                 console.log('篩選條件:', {
-                    field: field, 
-                    operator: operator, 
+                    field: field,
+                    operator: operator,
                     value: value,
                     logic: logic
                 });
-                
+
                 alert('篩選功能執行中...\n條件: ' + field + ' ' + operator + ' ' + value);
             });
-            
+
             // 清除條件
-            $('.btn-warning').click(function() {
+            $('.btn-primary').click(function () {
                 $('.filter-controls input[type="text"]').val('');
-                $('.filter-controls select').each(function() {
+                $('.filter-controls select').each(function () {
                     $(this).prop('selectedIndex', 0);
                 });
                 alert('篩選條件已清除');
