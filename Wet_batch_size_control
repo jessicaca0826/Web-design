@@ -1,455 +1,784 @@
-當然可以！我將在登入密碼的旁邊添加一個「記住密碼」的選項，並使用一個 checkbox 來實現這個功能。以下是修改後的 HTML 代碼：id: wet_batchsize_control.html
-name: wet_batchsize_control.html
-type: html
-content: |-
-  <!DOCTYPE html>
-  <html lang="zh-TW">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Wet Batchsize Control</title>
-      <link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.2/flatly/bootstrap.min.css" rel="stylesheet">
-      <style>
-          body {
-              font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
-              background-color: #ecf0f1;
-          }
-          
-          .main-container {
-              max-width: 1400px;
-              margin: 20px auto;
-              padding: 0 15px;
-          }
-          
-          .panel-custom {
-              background-color: white;
-              border: none;
-              border-radius: 6px;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-              overflow: hidden;
-          }
-          
-          .panel-header {
-              background: var(--bs-primary); /* 使用 primary 顏色 */
-              color: white;
-              padding: 12px 20px;
-              font-size: 18px;
-              font-weight: 400;
-              border: none;
-          }
-          
-          .panel-body {
-              padding: 20px;
-          }
-          
-          .status-info {
-              margin-bottom: 20px;
-              font-size: 13px;
-              color: #7b8a8b;
-          }
-          
-          .status-info div {
-              margin-bottom: 5px;
-          }
-          
-          .error-label {
-              color: #e74c3c;
-              font-size: 12px;
-          }
-          
-          .section-header {
-              background: var(--bs-primary); /* 使用 primary 顏色 */
-              color: white;
-              padding: 8px 15px;
-              font-weight: 500;
-              margin: 15px 0 10px 0;
-              border-radius: 4px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-          }
-          
-          .login-section {
-              display: flex;
-              align-items: center;
-              gap: 10px;
-          }
-          
-          .login-section label {
-              color: white;
-              font-size: 13px;
-              margin: 0;
-          }
-          
-          .form-row {
-              display: flex;
-              align-items: center;
-              margin-bottom: 15px;
-              flex-wrap: wrap;
-              gap: 12px;
-          }
-          
-          .form-row label {
-              font-size: 13px;
-              font-weight: 500;
-              color: #2c3e50;
-              white-space: nowrap;
-              margin: 0;
-          }
-          
-          .form-control-sm {
-              padding: 4px 8px;
-              font-size: 12px;
-              border-radius: 3px;
-              border: 1px solid #bdc3c7;
-          }
-          
-          .form-control-sm:focus {
-              border-color: var(--bs-primary); /* 使用 primary 顏色 */
-              box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2);
-          }
-          
-          .btn-custom {
-              background: var(--bs-primary); /* 使用 primary 顏色 */
-              border: 1px solid var(--bs-primary); /* 使用 primary 顏色邊框 */
-              color: white;
-              padding: 4px 12px;
-              font-size: 12px;
-              border-radius: 3px;
-              transition: all 0.3s ease;
-          }
-          
-          .btn-custom:hover {
-              background: #0056b3; /* 深一點的 primary 顏色 */
-              border-color: #004085; /* 深色邊框 */
-              color: white;
-          }
-          
-          .btn-login {
-              background: var(--bs-primary); /* 使用 primary 顏色 */
-              border: 1px solid var(--bs-primary); /* 使用 primary 顏色邊框 */
-              color: white;
-              padding: 4px 12px;
-              font-size: 12px;
-              border-radius: 3px;
-          }
-          
-          .btn-login:hover {
-              background: #0056b3; /* 深一點的 primary 顏色 */
-              color: white;
-          }
-          
-          .filter-section {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              margin: 15px 0;
-              padding: 15px;
-              background-color: #f8f9fa;
-              border-radius: 4px;
-              border-left: 4px solid var(--bs-primary); /* 使用 primary 顏色 */
-          }
-          
-          .filter-section label {
-              font-size: 13px;
-              font-weight: 500;
-              color: #2c3e50;
-              margin: 0;
-          }
-          
-          .remarks-section {
-              margin-left: 20px;
-          }
-          
-          .remarks-section label {
-              font-size: 13px;
-              font-weight: 500;
-              color: #2c3e50;
-              display: block;
-              margin-bottom: 5px;
-          }
-          
-          .form-control-textarea {
-              width: 100%;
-              max-width: 350px;
-              height: 70px;
-              border: 1px solid #bdc3c7;
-              border-radius: 3px;
-              padding: 8px;
-              font-size: 12px;
-              resize: vertical;
-          }
-          
-          .form-control-textarea:focus {
-              border-color: var(--bs-primary); /* 使用 primary 顏色 */
-              box-shadow: 0 0 0 2px rgba(108, 117, 125, 0.2);
-              outline: none;
-          }
-          
-          .table-custom {
-              width: 100%;
-              font-size: 12px;
-              margin-top: 15px;
-              border-collapse: collapse;
-              background-color: white;
-              border-radius: 4px;
-              overflow: hidden;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-          }
-          
-          .table-custom th {
-              background: var(--bs-primary); /* 使用 primary 顏色 */
-              color: white;
-              padding: 10px 8px;
-              text-align: center;
-              font-weight: 500;
-              border: none;
-          }
-          
-          .table-custom td {
-              padding: 8px;
-              text-align: center;
-              border-bottom: 1px solid #ecf0f1;
-              border-right: 1px solid #ecf0f1;
-          }
-          
-          .table-custom tbody tr:hover {
-              background-color: #f8f9fa;
-          }
-          
-          .modify-cell {
-              background-color: #f8f9fa !important;
-          }
-          
-          .product-group {
-              color: #6c757d;
-              font-weight: 500;
-          }
-          
-          .input-small { width: 80px; }
-          .input-medium { width: 120px; }
-          .input-large { width: 150px; }
-          .input-xlarge { width: 200px; }
-          
-          .watermark {
-              position: fixed;
-              top: 50%;
-              right: 30px;
-              font-size: 48px;
-              color: rgba(52, 73, 94, 0.08);
-              font-weight: 300;
-              transform: translateY(-50%);
-              pointer-events: none;
-              z-index: 1;
-              font-family: "Lato", sans-serif;
-          }
-          
-          .main-content {
-              position: relative;
-              z-index: 2;
-          }
-          
-          /* Responsive adjustments */
-          @media (max-width: 768px) {
-              .form-row {
-                  flex-direction: column;
-                  align-items: flex-start;
-              }
-              
-              .section-header {
-                  flex-direction: column;
-                  gap: 10px;
-                  align-items: stretch;
-              }
-              
-              .login-section {
-                  justify-content: center;
-              }
-          }
-      </style>
-  </head>
-  <body>
-      <div class="watermark">jessicam</div>
-      
-      <div class="main-container">
-          <div class="panel-custom main-content">
-              <div class="panel-header">
-                  Wet Batchsize control
-              </div>
-              
-              <div class="panel-body">
-                  <div class="status-info">
-                      <div>最新一次資料更新時間：</div>
-                      <div>最新一次資料上傳至RTD Server時間：</div>
-                      <div class="error-label">error label</div>
-                  </div>
-                  
-                  <div class="section-header">
-                      <span>Add New Setting</span>
-                      <div class="login-section">
-                          <label>ID:</label>
-                          <input type="text" class="form-control form-control-sm input-medium">
-                          <label>Password:</label>
-                          <input type="password" class="form-control form-control-sm input-medium">
-                          <input type="checkbox" id="rememberMe">
-                          <label for="rememberMe" style="color: white; font-size: 13px;">記住密碼</label>
-                          <button class="btn btn-login">登入帳號</button>
-                      </div>
-                  </div>
-                  
-                  <div class="form-row">
-                      <label>EQP_ID</label>
-                      <input type="text" class="form-control form-control-sm input-small">
-                      
-                      <label>PRODG_ID</label>
-                      <input type="text" class="form-control form-control-sm input-small">
-                      
-                      <label class="product-group">PRODUCT_GROUP</label>
-                      <input type="text" class="form-control form-control-sm input-medium">
-                      
-                      <label>PRODSPEC_ID</label>
-                      <input type="text" class="form-control form-control-sm input-small">
-                      
-                      <label>OPE_NO</label>
-                      <input type="text" class="form-control form-control-sm input-small">
-                      
-                      <label>BATCH_SIZE</label>
-                      <select class="form-control form-control-sm input-small">
-                          <option>ddl_3</option>
-                      </select>
-                      
-                      <label>MIN_BATCH_WAFER</label>
-                      <input type="text" class="form-control form-control-sm input-medium">
-                      
-                      <label>MEMO</label>
-                      <input type="text" class="form-control form-control-sm input-xlarge">
-                      
-                      <button class="btn btn-custom">新增</button>
-                  </div>
-                  
-                  <div style="display: flex; gap: 20px; margin: 15px 0;">
-                      <div class="filter-section">
-                          <label>Filter</label>
-                          <select class="form-control form-control-sm input-small">
-                              <option>ddl_1</option>
-                          </select>
-                          <select class="form-control form-control-sm input-small">
-                              <option>ddl_2</option>
-                          </select>
-                          <input type="text" placeholder="加入(and/or)" class="form-control form-control-sm input-medium">
-                          <select class="form-control form-control-sm input-small">
-                              <option>清除條選</option>
-                          </select>
-                          <span style="font-size: 11px; color: #7b8a8b;">執行篩選</span>
-                      </div>
-                      
-                      <div class="remarks-section">
-                          <label>Remark:</label>
-                          <textarea class="form-control-textarea" placeholder="1. 歷史設定檔參link"></textarea>
-                      </div>
-                  </div>
-                  
-                  <div class="section-header">Current Setting</div>
-                  
-                  <table class="table-custom">
-                      <thead>
-                          <tr>
-                              <th>Modify<br>更新/取消更新/<br>刪除</th>
-                              <th>EQP_ID</th>
-                              <th>PRODG_ID</th>
-                              <th class="product-group">PRODUCT_GROUP</th>
-                              <th>PRODSPEC_ID</th>
-                              <th>OPE_NO</th>
-                              <th>BATCH_SIZE</th>
-                              <th>MIN_BATCH_WAFER</th>
-                              <th>MEMO</th>
-                              <th>UPDATE_USER</th>
-                              <th>UPDATE_TIME</th>
-                              <th>啟用</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          <tr>
-                              <td class="modify-cell">
-                                  <select class="form-control form-control-sm" style="font-size: 10px;">
-                                      <option>更新/取消更新/刪除</option>
-                                  </select>
-                              </td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                          </tr>
-                          <tr>
-                              <td class="modify-cell"></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                              <td></td>
-                          </tr>
-                      </tbody>
-                  </table>
-              </div>
-          </div>
-      </div>
-      
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-      
-      <script>
-          // 簡單的互動功能
-          document.addEventListener('DOMContentLoaded', function() {
-              // 新增按鈕功能
-              const addBtn = document.querySelector('.btn-custom');
-              if (addBtn && addBtn.textContent === '新增') {
-                  addBtn.addEventListener('click', function() {
-                      // 收集表單資料
-                      const formData = {};
-                      const inputs = document.querySelectorAll('.form-row input, .form-row select');
-                      inputs.forEach(input => {
-                          if (input.previousElementSibling && input.previousElementSibling.tagName === 'LABEL') {
-                              const label = input.previousElementSibling.textContent;
-                              formData[label] = input.value;
-                          }
-                      });
-                      
-                      console.log('新增資料:', formData);
-                      alert('新增功能待實作\n已收集表單資料，請查看控制台');
-                  });
-              }
-              
-              // 登入按鈕功能
-              const loginBtn = document.querySelector('.btn-login');
-              if (loginBtn) {
-                  loginBtn.addEventListener('click', function() {
-                      const loginSection = loginBtn.parentElement;
-                      const inputs = loginSection.querySelectorAll('input');
-                      const id = inputs[0].value;
-                      const password = inputs[1].value;
-                      
-                      if (id && password) {
-                          const rememberMe = document.getElementById('rememberMe').checked;
-                          alert('登入功能待實作\nID: ' + id + (rememberMe ? '\n將記住密碼' : ''));
-                      } else {
-                          alert('請輸入帳號和密碼');
-                      }
-                  });
-              }
-          });
-      </script>
-  </body>
-  </html>
-說明•新增 Checkbox：在密碼輸入框旁邊添加了一個 checkbox，標籤為「記住密碼」。•JavaScript 功能：在登入按鈕的事件處理函數中，檢查 checkbox 是否被選中，並在警告框中顯示相應的提示。您可以將這段 HTML 代碼直接複製到您的 .html 文件中，並在瀏覽器中查看效果。如果有其他需求或問題，隨時告訴我！
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head runat="server">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wet Batchsize Control</title>
+    <link href="../css/bootstrap.flaty.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #ecf0f1;
+        }
+        
+        .main-container {
+            max-width: 2000px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        
+        .panel-custom {
+            background-color: white;
+            border: none;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .panel-primary {
+            color: white;
+            border-radius: 6px 6px 0 0;
+            margin-bottom: 0;
+        }
+        
+        .panel-heading {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .status-info {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #7b8a8b;
+        }
+        
+        .status-info div {
+            margin-bottom: 5px;
+        }
+        
+        .error-label {
+            color: #e74c3c;
+            font-size: 16px;
+        }
+        
+        .section-header {
+            background: #b4bcc2;
+            color: white;
+            padding: 8px 15px;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            border-radius: 4px;
+            font-size: 16px; /*使用clearfix來清除浮動*/
+            overflow: hidden; /*觸發IE的hasLayout*/
+            zoom: 1;
+        }
+        
+        /*為IE6/7添加 clearfix*/
+        .section-header:before,
+        .section-header:after {
+            content: "";
+            display: table;
+        }
+        
+        .section-header:after {
+            clear: both;
+        }
+        
+        /*僅針對.section-header下的h5進行樣式重置*/
+        .section-header h5 {
+            float: left; /*左浮動*/
+            margin: 0;
+            margin-right: 15px; /* 與右側內容保值間距 */
+            line-height: 32px; /* 與右側輸入框高度對齊 */
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .login-section {
+            float: right;
+            vertical-align: middle; /*垂直對齊*/
+        }
+        
+        .login-section label,  
+        .login-section input{
+            vertical-align: middle; /*垂直對齊*/
+            margin-right: 8px;
+            display: inline-block;
+        }
+        
+        .login-section label:last-of-type {
+            margin-right: 0;     
+        }
+        
+        .login-section input[type="text"],
+        .login-section input[type="password"] {
+            width: 140px;
+            height: 20px;
+            padding: 4px 8px;
+            font-size: 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+        }
+        
+        .login-section input[type="checkbox"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .login-section label {
+            font-size: 14px;
+            margin-bottom: 0;
+            font-weight: bold;
+            line-height: 28px;
+        }
+        
+        .form-row {
+            margin-bottom: 15px;
+            font-size: 14px;
+            overflow: hidden; /*使用clearfix來清除浮動*/
+            zoom: 1; /*觸發IE的hasLayout*/
+        }
+        
+        /*為IE6/7添加 clearfix*/
+        .form-row:before,
+        .form-row:after {
+            content: "";
+            display: table;
+        }
+        
+        .form-row:after {
+            clear: both;
+        }
+        
+        .form-group {
+            float: left;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .form-group:last-child {
+            margin-right: 0;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-right: 4px;
+            white-space: nowrap;
+            vertical-align: middle; /* 垂直對齊 */
+            font-size: 14px;
+            display: block;
+            margin-bottom: 3px;
+        }
+        
+        .form-control {
+            display: inline-block !important;
+            vertical-align: top;
+            font-size: 14px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            padding: 4px 8px;
+        }
+        
+        .form-control:focus {
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        
+        .form-control-sm {
+            height: 28px;
+        }
+        
+        /*輸入框尺寸*/
+        .input-small { width: 80px; }
+        .input-medium { width: 140px; }
+        .input-large { width: 150px; }
+        .input-xlarge { width: 200px; }
+        
+        .btn-custom {
+            background: #b4bcc2;
+            border: 1px solid #b4bcc2;
+            color: white;
+            padding: 4px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            height: 28px;
+            cursor: pointer;
+        }
+        
+        .btn-custom:hover {
+            background: #2c3e50;
+            border-color: #2c3e50;
+            color: white;
+        }
+        
+        .filter-section-container {
+            overflow: hidden;
+            zoom: 1;
+            margin: 15px 0;
+            vertical-align: middle;
+        }
+        
+        filter-section-container:before,
+        filter-section-container:after {
+            content: "";
+            display: table;
+        }
+        
+        filter-section-container:after {
+            clear: both;
+        }
+        
+        .filter-section {
+            float: left;
+            width: 60%;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #b4bcc2;
+        }
+        
+        .filter-controls {
+            overflow: hidden;
+            zoom: 1;
+            margin-bottom: 15px;
+        }
+        
+        .filter-controls:before,
+        .filter-controls:after {
+            content: "";
+            display: table;
+        }
+        
+        .filter-controls:after {
+            clear: both;
+        }
+        
+        .filter-controls > * {
+            float: left;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        .filter-section label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 25px;
+        }
+        
+        .filter-conditions-container 
+        {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .filter-conditions-label 
+        {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom:5px;
+         }
+         
+         .filter-conditions-display 
+        {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            background-color: #fff;
+            font-family: 'Courier New', Consolas, Monospace;
+            font-size: 14px;
+            resize: vertical;
+            overflow-y: auto;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+         }
+         
+        .filter-conditions-display:focus {
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+            outline: none;
+         }
+         
+         /*篩選按扭區域*/
+         .filter-buttons {
+             text-align: right;
+             margin-top: 10px;
+         }
+         
+         .filter-buttons .btn
+         {
+             margin-left: 5px;
+         }
+        
+        .remarks-section {
+            float: left;
+            width: 35%;
+            padding: 0 15px 20px;
+        }
+        
+        .form-control-textarea {
+            width: 100%;
+            max-width: 350px;
+            height: 70px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            padding: 8px;
+            font-size: 12px;
+            resize: vertical;
+            display: block;
+        }
+        
+        .form-control-textarea:focus {
+            border-color: #b4bcc2;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        
+        .remarks-text
+        {
+            background-color: #f8f9fa; /*淺灰背景*/
+            color: #495057; /*深灰文字*/
+            cursor: default; /*默認鼠標樣式*/
+            overflow-y: auto; /*內容過多時可滑動*/
+            line-height: 1.5; /*行距*/
+        }
+        
+        .table-custom {
+            width: 100%;
+            font-size: 12px;
+            margin-top: 15px;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .table-custom th {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: none;
+        }
+        
+        .table-custom td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+            border-right: 1px solid #ecf0f1;
+        }
+        
+        .table-custom tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .modify-cell {
+            background-color: #faf9fa !important;
+        }
+        
+        .modify-cell select {
+            font-size: 10px;
+            height: 24px;
+            padding: 2px 4px;
+        }
+        
+        .main-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 載入狀態 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .section-header {
+                text-align: left;
+                padding: 15px;
+            }
+            
+            .section-header h5 {
+                float: none;
+                display: block;
+                margin-bottom: 10px;
+            }
+            
+            .login-section {
+                float: none;
+                margin-top: 10px;
+                clear: both;
+            }
+            
+            .login-section label,
+            .login-section input {
+                display: block;
+                margin-bottom: 5px;
+                margin-right: 0;
+                width: 100%;
+            }
+            
+            .login-section input[type="checkbox"] {
+                width: auto;
+                display: inline-block;
+            }
+            
+            .form-group {
+                float: none;
+                display: block;
+                margin-bottom: 15px;
+                width: 100%;
+            }
+            
+            .form-control {
+                width: 100% !important;
+            }
+            
+            .filter-section,
+            .remarks-section {
+                float: none;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .filter-controls > * {
+                float: none;
+                display: block;
+                margin-bottom: 5px;
+                margin-right: 0;
+            }
+        }
+        
+        /* IE 兼容性 */
+        .ie8 .form-group,
+        .ie9 .form-group {
+            display: block;
+            zoom: 1;
+        }
+        
+        .ie8 .filter-controls > *,
+        .ie9 .filter-controls > * {
+            display: block;
+            zoom: 1;
+        }
+        
+        .ie8 .login-section label,
+        .ie8 .login-section input,
+        .ie9 .login-section label,
+        .ie9 .login-section input {
+            zoom: 1;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="panel-custom main-content">
+            <!-- 標題區域 -->
+            <div class="panel-primary">
+                <h1 class="panel-heading">WET BATCH SIZE CONTROL</h1>
+            </div>
+            
+            <div class="panel-body">
+                <!-- 狀態資訊 -->
+                <div class="status-info">
+                    <span>最後更新時間: 2024-08-02 14:30:25</span> &nbsp;&nbsp;
+                    <span>最後上傳時間: 2024-08-02 14:25:10</span> &nbsp;&nbsp;
+                    <span>網頁如有問題請call#6598</span>
+                </div>
+                
+                <!-- 新增設定區域 -->
+                <div class="section-header">
+                    <h5>Add New Setting</h5>
+                    <div class="login-section">
+                        <label>ID:</label>
+                        <input type="text" id="userID" class="form-control">
+                        <label>Password:</label>
+                        <input type="password" id="passward" class="form-control">
+                        <input type="checkbox" id="rememberMe">
+                        <label for="rememberMe">記住密碼</label>
+                    </div>
+                </div>
+                
+                <!-- 表單區域 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>EQP_ID</label>
+                        <input type="text" id="txb_eqpid" class="form-control form-control-sm input-small">
+                    </div>
+                    <div class="form-group">
+                        <label>PRODG_ID</label>
+                        <input type="text" id="txb_prodgid" class="form-control form-control-sm input-medium">
+                    </div>
+                    <div class="form-group">
+                        <label>PRODUCT_GROUP</label>
+                        <input type="text" id="tbx_prodgrp" class="form-control form-control-sm input-medium">
+                    </div>
+                    <div class="form-group">
+                        <label>PRODSPEC_ID</label>
+                        <input type="text" id="tbx_prodspecid" class="form-control form-control-sm input-medium">
+                    </div>
+                    <div class="form-group">
+                        <label>OPE_NO</label>
+                        <input type="text" id="tbx_openo" class="form-control form-control-sm input-small">
+                    </div>
+                    <div class="form-group">
+                        <label>BATCH_SIZE</label>
+                        <select id="batch_size" class="form-control form-control-sm input-small">
+                            <option>請選擇</option>
+                            <option>1</option>
+                            <option>2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>MIN_WAFER_COUNT</label>
+                        <input type="number" id="tbx_min_wafer_cnt" class="form-control form-control-sm input-small">
+                    </div>
+                    <div class="form-group">
+                        <label>MEMO</label>
+                        <input type="text" id="tbx_memo" class="form-control form-control-sm input-large">
+                    </div>
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button id="btn_add" class="btn btn-custom">新增</button>
+                    </div>
+                </div>
+                
+                <!-- 篩選區域 -->
+                <div class="filter-section-container">
+                    <div class="filter-section">
+                        <div class="filter-controls">
+                            <label>Filter:</label>
+                            <select id="sel_filterField" class="form-control form-control-sm input-medium">
+                                <option value="EQP_ID">EQP_ID</option>
+                                <option value="PRODG_ID">PRODG_ID</option>
+                                <option value="PRODUCT_GROUP">PRODUCT_GROUP</option>
+                                <option value="PRODSPEC_ID">PRODSPEC_ID</option>
+                                <option value="OPE_NO">OPE_NO</option>
+                            </select>
+                            <select id="sel_filterOperator" class="form-control form-control-sm input-medium">
+                                <option value="=">等於</option>
+                                <option value="!=">不等於</option>
+                                <option value=">">大於</option>
+                                <option value=">=">大於等於</option>
+                                <option value="<">小於</option>
+                                <option value="<=">小於等於</option>
+                                <option value="like_start">開頭以</option>
+                                <option value="like_end">結尾以</option>
+                                <option value="not_like_start">不開頭以</option>
+                                <option value="not_like_end">不結尾以</option>
+                                <option value="like">包含</option>
+                                <option value="not_like">不包含</option>
+                            </select>
+                            <input type="text" id="tbx_filterVal" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
+                            <select id="sel_multiOper" class="form-control form-control-sm input-small">
+                                <option value="AND">AND</option>
+                                <option value="OR">OR</option>
+                            </select>
+                            <button type="button" id="btnAddFilter" class="btn btn-sucess btn-sm">新增篩選</button>
+                        </div>
+                        <!--篩選條件顯示區域-->
+                        <div class="filter-conditions-container">
+                            <textarea id="filterConditions" class="filter-conditions-display" placeholder="篩選條件"></textarea>
+                            <button type="button" id="Button1" class="btn btn-default btn-sm">執行篩選</button>
+                            <button type="button" id="Button2" class="btn btn-primary btn-sm">清除條件</button>
+                        </div>
+                    </div>
+                    
+                    <div class="remarks-section">
+                        <div class="form-control-textarea remarks-text">
+                        <span style="color: Red; font-weight:bold">Remarks:</span><br>
+                        1. 歷史設定檔參考連結<br>
+                        2. 相關注意事項<br>
+                        3. 操作說明
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 目前設定區域 -->
+                <div class="section-header">Current Setting</div>
+                
+                <div class="table-responsive">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th >Modify</th>
+                                <th>EQP_ID</th>
+                                <th>PRODG_ID</th>
+                                <th>PRODUCT_GROUP</th>
+                                <th>PRODSPEC_ID</th>
+                                <th>OPE_NO</th>
+                                <th>BATCH_SIZE</th>
+                                <th>MIN_BATCH_WAFER</th>
+                                <th>MEMO</th>
+                                <th>UPDATE_USER</th>
+                                <th>UPDATE_TIME</th>
+                                <th>啟用</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="modify-cell">
+                                    <select class="form-control">
+                                        <option>選擇動作</option>
+                                        <option value="update">更新</option>
+                                        <option value="cancel">取消更新</option>
+                                        <option value="delete">刪除</option>
+                                    </select>
+                                </td>
+                                <td>EQP001</td>
+                                <td>PROD001</td>
+                                <td>GROUP_A</td>
+                                <td>SPEC001</td>
+                                <td>OP10</td>
+                                <td>25</td>
+                                <td>20</td>
+                                <td>測試備註1</td>
+                                <td>USER001</td>
+                                <td>2024-08-02 14:25</td>
+                                <td>
+                                    <input type="checkbox" checked>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="modify-cell">
+                                    <select class="form-control">
+                                        <option>選擇動作</option>
+                                        <option value="update">更新</option>
+                                        <option value="cancel">取消更新</option>
+                                        <option value="delete">刪除</option>
+                                    </select>
+                                </td>
+                                <td>EQP002</td>
+                                <td>PROD002</td>
+                                <td>GROUP_B</td>
+                                <td>SPEC002</td>
+                                <td>OP20</td>
+                                <td>50</td>
+                                <td>40</td>
+                                <td>測試備註2</td>
+                                <td>USER002</td>
+                                <td>2024-08-02 13:45</td>
+                                <td>
+                                    <input type="checkbox">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="modify-cell">
+                                    <select class="form-control">
+                                        <option>選擇動作</option>
+                                        <option value="update">更新</option>
+                                        <option value="cancel">取消更新</option>
+                                        <option value="delete">刪除</option>
+                                    </select>
+                                </td>
+                                <td>EQP003</td>
+                                <td>PROD003</td>
+                                <td>GROUP_C</td>
+                                <td>SPEC003</td>
+                                <td>OP30</td>
+                                <td>100</td>
+                                <td>80</td>
+                                <td>測試備註3</td>
+                                <td>USER003</td>
+                                <td>2024-08-02 12:30</td>
+                                <td>
+                                    <input type="checkbox" checked>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 操作說明 -->
+                <div class="alert alert-info" style="margin-top: 20px; font-size: 12px;">
+                    <strong>📋 操作說明：</strong><br>
+                    • 上方表單可新增設定，填寫完畢後點擊「新增」按鈕<br>
+                    • 篩選區域可設定查詢條件，支援多重條件組合<br>
+                    • 表格中可直接修改現有設定<br>
+                    • 勾選「啟用」可控制設定是否生效
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            // 新增按鈕功能
+            $('.btn-custom').click(function () {
+                var formData = {};
+                var hasError = false;
+
+                $('.form-row .form-group').each(function () {
+                    var label = $(this).find('label').text().trim();
+                    var input = $(this).find('input, select');
+
+                    if (label && label !== '' && label !== ' ' && input.length > 0) {
+                        formData[label] = input.val();
+                    }
+                });
+
+                // 驗證必填欄位
+                if (!formData['EQP_ID'] || formData['EQP_ID'].trim() === '') {
+                    alert('請填寫 EQP_ID');
+                    $('.form-row .form-group').eq(0).find('input').focus();
+                    return;
+                }
+
+                if (!formData['PRODG_ID'] || formData['PRODG_ID'].trim() === '') {
+                    alert('請填寫 PRODG_ID');
+                    $('.form-row .form-group').eq(1).find('input').focus();
+                    return;
+                }
+
+                console.log('新增資料:', formData);
+                alert('資料驗證通過！資料已送出新增');
+
+                // 清空表單
+                $('.form-row input, .form-row select').val('');
+            });
+
+            // 篩選功能
+            $('.btn-default').click(function () {
+                var field = $('.filter-controls select').eq(0).val();
+                var operator = $('.filter-controls select').eq(1).val();
+                var value = $('.filter-controls input[type="text"]').val();
+                var logic = $('.filter-controls select').eq(2).val();
+
+                if (!value || value.trim() === '') {
+                    alert('請輸入篩選條件值');
+                    $('.filter-controls input[type="text"]').focus();
+                    return;
+                }
+
+                console.log('篩選條件:', {
+                    field: field,
+                    operator: operator,
+                    value: value,
+                    logic: logic
+                });
+
+                alert('篩選功能執行中...\n條件: ' + field + ' ' + operator + ' ' + value);
+            });
+
+            // 清除條件
+            $('.btn-primary').click(function () {
+                $('.filter-controls input[type="text"]').val('');
+                $('.filter-controls select').each(function () {
+                    $(this).prop('selectedIndex', 0);
+                });
+                alert('篩選條件已清除');
+            });
+        });
+    </script>
+</body>
+</html>
