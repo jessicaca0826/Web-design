@@ -226,7 +226,7 @@
         
         .filter-section {
             float: left;
-            width: 60%;
+            width: 45%;
             padding: 15px;
             background-color: #f8f9fa;
             border-radius: 4px;
@@ -253,6 +253,46 @@
             float: left;
             margin-right: 8px;
             vertical-align: middle;
+        }
+        
+        .filter-controls-row {
+            overflow: hidden;
+            zoom: 1;
+            margin-bottom: 15px; 
+        }
+        
+        .filter-controls-row:before,
+        .filter-controls-row:after {
+            content: "";
+            display: table;
+        }
+        
+        .filter-controls-row:after {
+            clear: both;
+        }
+        
+        .filter-item 
+        {
+            float: left;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        
+        .filter-item:last-child 
+        {
+            margin-right: 0;
+        }
+        
+        /* 控制各個元件的寬度 */
+        .filter-item:nth-child(1) {width: 80px;} /* Filter label */
+        .filter-item:nth-child(2) {width: 140px;} /* 欄位選擇 */
+        .filter-item:nth-child(3) {width: 140px;} /* 運算子選擇 */
+        .filter-item:nth-child(4) {width: 140px;} /* 條件值輸入 */
+        .filter-item:nth-child(5) {width: 80px;} /* AND/OR */
+        .filter-item:nth-child(6) {width: 80px;} /* 新增按鈕 */
+        
+        .filter-conditions-row {
+            margin-bottom: 15px;
         }
         
         .filter-section label {
@@ -290,8 +330,6 @@
             resize: vertical;
             overflow-y: auto;
             box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-            -moz-box-sizing: border-box;
          }
          
         .filter-conditions-display:focus {
@@ -553,44 +591,58 @@
                 <!-- 篩選區域 -->
                 <div class="filter-section-container">
                     <div class="filter-section">
-                        <div class="filter-controls">
-                            <label>Filter:</label>
-                            <select id="sel_filterField" class="form-control form-control-sm input-medium">
-                                <option value="EQP_ID">EQP_ID</option>
-                                <option value="PRODG_ID">PRODG_ID</option>
-                                <option value="PRODUCT_GROUP">PRODUCT_GROUP</option>
-                                <option value="PRODSPEC_ID">PRODSPEC_ID</option>
-                                <option value="OPE_NO">OPE_NO</option>
-                            </select>
-                            <select id="sel_filterOperator" class="form-control form-control-sm input-medium">
-                                <option value="=">等於</option>
-                                <option value="!=">不等於</option>
-                                <option value=">">大於</option>
-                                <option value=">=">大於等於</option>
-                                <option value="<">小於</option>
-                                <option value="<=">小於等於</option>
-                                <option value="like_start">開頭以</option>
-                                <option value="like_end">結尾以</option>
-                                <option value="not_like_start">不開頭以</option>
-                                <option value="not_like_end">不結尾以</option>
-                                <option value="like">包含</option>
-                                <option value="not_like">不包含</option>
-                            </select>
-                            <input type="text" id="tbx_filterVal" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
-                            <select id="sel_multiOper" class="form-control form-control-sm input-small">
-                                <option value="AND">AND</option>
-                                <option value="OR">OR</option>
-                            </select>
-                            <button type="button" id="btnAddFilter" class="btn btn-sucess btn-sm">新增篩選</button>
+                        <div class="filter-controls-row">
+                            <div class="filter-item">
+                                <label>Filter:</label>
+                            </div>
+                            <div class="filter-item">
+                                <select id="Select1" class="form-control form-control-sm input-medium">
+                                    <option value="EQP_ID">EQP_ID</option>
+                                    <option value="PRODG_ID">PRODG_ID</option>
+                                    <option value="PRODUCT_GROUP">PRODUCT_GROUP</option>
+                                    <option value="PRODSPEC_ID">PRODSPEC_ID</option>
+                                    <option value="OPE_NO">OPE_NO</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <select id="Select2" class="form-control form-control-sm input-medium">
+                                    <option value="=">等於</option>
+                                    <option value="!=">不等於</option>
+                                    <option value=">">大於</option>
+                                    <option value=">=">大於等於</option>
+                                    <option value="<">小於</option>
+                                    <option value="<=">小於等於</option>
+                                    <option value="like_start">開頭以</option>
+                                    <option value="like_end">結尾以</option>
+                                    <option value="not_like_start">不開頭以</option>
+                                    <option value="not_like_end">不結尾以</option>
+                                    <option value="like">包含</option>
+                                    <option value="not_like">不包含</option>
+                                 </select>
+                            </div>
+                            <div class="filter-item">
+                                <input type="text" id="Text1" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
+                            </div>
+                            <div class="filter-item">
+                                <select id="Select3" class="form-control form-control-sm input-small">
+                                    <option value="AND">AND</option>
+                                    <option value="OR">OR</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <button type="button" id="Button3" class="btn btn-sucess btn-sm">新增篩選</button>
+                            </div>
                         </div>
+                        
                         <!--篩選條件顯示區域-->
-                        <div class="filter-conditions-container">
+                        <div class="filter-conditions-row">
                             <textarea id="filterConditions" class="filter-conditions-display" placeholder="篩選條件"></textarea>
-                            <button type="button" id="Button1" class="btn btn-default btn-sm">執行篩選</button>
-                            <button type="button" id="Button2" class="btn btn-primary btn-sm">清除條件</button>
+                            <div class="filter-buttons">
+                                <button type="button" id="Button1" class="btn btn-default btn-sm">執行篩選</button>
+                                <button type="button" id="Button2" class="btn btn-primary btn-sm">清除條件</button>
+                            </div>
                         </div>
                     </div>
-                    
                     <div class="remarks-section">
                         <div class="form-control-textarea remarks-text">
                         <span style="color: Red; font-weight:bold">Remarks:</span><br>
