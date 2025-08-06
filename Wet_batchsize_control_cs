@@ -1,0 +1,365 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.OracleClient;
+using System.Linq;
+using System.Text;
+using System.Web;
+using System.Web.Services;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Configuration;
+
+public partial class WetBatchsizeControl : System.Web.UI.Page
+{
+private static string connectionString = ConfigurationManager.ConnectionStrings[“OracleConnection”].ConnectionString;
+
+```
+// ViewState 用於記住登入資訊
+private string UserID
+{
+    get { return ViewState["UserID"] as string ?? ""; }
+    set { ViewState["UserID"] = value; }
+}
+
+private string Password
+{
+    get { return ViewState["Password"] as string ?? ""; }
+    set { ViewState["Password"] = value; }
+}
+
+private bool RememberMe
+{
+    get { return ViewState["RememberMe"] as bool? ?? false; }
+    set { ViewState["RememberMe"] = value; }
+}
+
+protected void Page_Load(object sender, EventArgs e)
+{
+    if (!IsPostBack)
+    {
+        LoadTableData();
+    }
+    else
+    {
+        // 如果RememberMe被勾選，保持登入資訊
+        if (RememberMe)
+        {
+            // 這些值會在頁面回傳時自動保持
+        }
+    }
+}
+
+// 功能1: 新增資料
+[WebMethod]
+public static string AddNewSetting(string userID, string password, string eqpId, string prodgId, 
+    string productGroup, string prodspecId, string opeNo, string batchSize, 
+    string minWaferCount, string memo)
+{
+    try
+    {
+        // 驗證使用者身分
+        if (!RTD_ACCESS_CONTROL(userID, password))
+        {
+            return "身分驗證失敗";
+        }
+
+        // 插入資料到Oracle資料庫
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = @"INSERT INTO WET_BATCH_SIZE_CONTROL 
+                          (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, 
+                           BATCH_SIZE, MIN_BATCH_WAFER, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE)
+                          VALUES 
+                          (:EQP_ID, :PRODG_ID, :PRODUCT_GROUP, :PRODSPEC_ID, :OPE_NO, 
+                           :BATCH_SIZE, :MIN_BATCH_WAFER, :MEMO, :UPDATE_USER, SYSDATE, 'Y')";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":EQP_ID", OracleType.VarChar).Value = eqpId ?? "";
+                cmd.Parameters.Add(":PRODG_ID", OracleType.VarChar).Value = prodgId ?? "";
+                cmd.Parameters.Add(":PRODUCT_GROUP", OracleType.VarChar).Value = productGroup ?? "";
+                cmd.Parameters.Add(":PRODSPEC_ID", OracleType.VarChar).Value = prodspecId ?? "";
+                cmd.Parameters.Add(":OPE_NO", OracleType.VarChar).Value = opeNo ?? "";
+                cmd.Parameters.Add(":BATCH_SIZE", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(batchSize) ? (object)DBNull.Value : Convert.ToInt32(batchSize);
+                cmd.Parameters.Add(":MIN_BATCH_WAFER", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(minWaferCount) ? (object)DBNull.Value : Convert.ToInt32(minWaferCount);
+                cmd.Parameters.Add(":MEMO", OracleType.VarChar).Value = memo ?? "";
+                cmd.Parameters.Add(":UPDATE_USER", OracleType.VarChar).Value = userID;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "新增成功" : "新增失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "錯誤: " + ex.Message;
+    }
+}
+
+// 功能3: 執行篩選
+[WebMethod]
+public static string FilterTableData(string filterConditions)
+{
+    try
+    {
+        StringBuilder html = new StringBuilder();
+        
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "SELECT * FROM WET_BATCH_SIZE_CONTROL";
+            
+            if (!string.IsNullOrEmpty(filterConditions))
+            {
+                sql += " WHERE " + filterConditions;
+            }
+            
+            sql += " ORDER BY UPDATE_TIME DESC";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                using (OracleDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        html.AppendLine("<tr>");
+                        html.AppendLine($@"<td class='modify-cell'>
+                            <select class='form-control' onchange='handleModifyAction(this, {reader["ID"]})'>
+                                <option>選擇動作</option>
+                                <option value='update'>更新</option>
+                                <option value='cancel'>取消更新</option>
+                                <option value='delete'>刪除</option>
+                            </select>
+                        </td>");
+                        html.AppendLine($"<td>{reader["EQP_ID"]}</td>");
+                        html.AppendLine($"<td>{reader["PRODG_ID"]}</td>");
+                        html.AppendLine($"<td>{reader["PRODUCT_GROUP"]}</td>");
+                        html.AppendLine($"<td>{reader["PRODSPEC_ID"]}</td>");
+                        html.AppendLine($"<td>{reader["OPE_NO"]}</td>");
+                        html.AppendLine($"<td>{reader["BATCH_SIZE"]}</td>");
+                        html.AppendLine($"<td>{reader["MIN_BATCH_WAFER"]}</td>");
+                        html.AppendLine($"<td>{reader["MEMO"]}</td>");
+                        html.AppendLine($"<td>{reader["UPDATE_USER"]}</td>");
+                        html.AppendLine($"<td>{Convert.ToDateTime(reader["UPDATE_TIME"]):yyyy-MM-dd HH:mm}</td>");
+                        
+                        string isChecked = reader["ACTIVE"].ToString() == "Y" ? "checked" : "";
+                        html.AppendLine($@"<td>
+                            <input type='checkbox' {isChecked} onchange='toggleActive({reader["ID"]}, this.checked)'>
+                        </td>");
+                        html.AppendLine("</tr>");
+                    }
+                }
+            }
+        }
+        
+        return html.ToString();
+    }
+    catch (Exception ex)
+    {
+        return "錯誤: " + ex.Message;
+    }
+}
+
+// 功能4: 載入資料表內容
+[WebMethod]
+public static string LoadTableData()
+{
+    return FilterTableData(""); // 不帶篩選條件，載入所有資料
+}
+
+// 權限驗證函數
+private static bool RTD_ACCESS_CONTROL(string userID, string password)
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = @"SELECT COUNT(*) FROM USER_ACCESS_CONTROL 
+                          WHERE USER_ID = :USER_ID AND PASSWORD = :PASSWORD AND ACTIVE = 'Y'";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":USER_ID", OracleType.VarChar).Value = userID;
+                cmd.Parameters.Add(":PASSWORD", OracleType.VarChar).Value = password;
+
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                return count > 0;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        // 記錄錯誤日誌
+        System.Diagnostics.Debug.WriteLine("RTD_ACCESS_CONTROL Error: " + ex.Message);
+        return false;
+    }
+}
+
+// 更新啟用狀態
+[WebMethod]
+public static string ToggleActive(int id, bool isActive)
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "UPDATE WET_BATCH_SIZE_CONTROL SET ACTIVE = :ACTIVE WHERE ID = :ID";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":ACTIVE", OracleType.VarChar).Value = isActive ? "Y" : "N";
+                cmd.Parameters.Add(":ID", OracleType.Number).Value = id;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "更新成功" : "更新失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "錯誤: " + ex.Message;
+    }
+}
+
+// 刪除記錄
+[WebMethod]
+public static string DeleteRecord(int id, string userID, string password)
+{
+    try
+    {
+        // 驗證使用者身分
+        if (!RTD_ACCESS_CONTROL(userID, password))
+        {
+            return "身分驗證失敗";
+        }
+
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "DELETE FROM WET_BATCH_SIZE_CONTROL WHERE ID = :ID";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":ID", OracleType.Number).Value = id;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "刪除成功" : "刪除失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "錯誤: " + ex.Message;
+    }
+}
+
+// 更新記錄
+[WebMethod]
+public static string UpdateRecord(int id, string userID, string password, string eqpId, 
+    string prodgId, string productGroup, string prodspecId, string opeNo, 
+    string batchSize, string minWaferCount, string memo)
+{
+    try
+    {
+        // 驗證使用者身分
+        if (!RTD_ACCESS_CONTROL(userID, password))
+        {
+            return "身分驗證失敗";
+        }
+
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = @"UPDATE WET_BATCH_SIZE_CONTROL SET 
+                          EQP_ID = :EQP_ID, PRODG_ID = :PRODG_ID, PRODUCT_GROUP = :PRODUCT_GROUP,
+                          PRODSPEC_ID = :PRODSPEC_ID, OPE_NO = :OPE_NO, BATCH_SIZE = :BATCH_SIZE,
+                          MIN_BATCH_WAFER = :MIN_BATCH_WAFER, MEMO = :MEMO, 
+                          UPDATE_USER = :UPDATE_USER, UPDATE_TIME = SYSDATE
+                          WHERE ID = :ID";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":EQP_ID", OracleType.VarChar).Value = eqpId ?? "";
+                cmd.Parameters.Add(":PRODG_ID", OracleType.VarChar).Value = prodgId ?? "";
+                cmd.Parameters.Add(":PRODUCT_GROUP", OracleType.VarChar).Value = productGroup ?? "";
+                cmd.Parameters.Add(":PRODSPEC_ID", OracleType.VarChar).Value = prodspecId ?? "";
+                cmd.Parameters.Add(":OPE_NO", OracleType.VarChar).Value = opeNo ?? "";
+                cmd.Parameters.Add(":BATCH_SIZE", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(batchSize) ? (object)DBNull.Value : Convert.ToInt32(batchSize);
+                cmd.Parameters.Add(":MIN_BATCH_WAFER", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(minWaferCount) ? (object)DBNull.Value : Convert.ToInt32(minWaferCount);
+                cmd.Parameters.Add(":MEMO", OracleType.VarChar).Value = memo ?? "";
+                cmd.Parameters.Add(":UPDATE_USER", OracleType.VarChar).Value = userID;
+                cmd.Parameters.Add(":ID", OracleType.Number).Value = id;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "更新成功" : "更新失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "錯誤: " + ex.Message;
+    }
+}
+
+// 建構SQL篩選條件
+[WebMethod]
+public static string BuildFilterCondition(string field, string operatorType, string value, string logic)
+{
+    StringBuilder condition = new StringBuilder();
+    
+    switch (operatorType)
+    {
+        case "=":
+            condition.Append($"{field} = '{value}'");
+            break;
+        case "!=":
+            condition.Append($"{field} != '{value}'");
+            break;
+        case ">":
+            condition.Append($"{field} > '{value}'");
+            break;
+        case ">=":
+            condition.Append($"{field} >= '{value}'");
+            break;
+        case "<":
+            condition.Append($"{field} < '{value}'");
+            break;
+        case "<=":
+            condition.Append($"{field} <= '{value}'");
+            break;
+        case "like_start":
+            condition.Append($"{field} LIKE '{value}%'");
+            break;
+        case "like_end":
+            condition.Append($"{field} LIKE '%{value}'");
+            break;
+        case "not_like_start":
+            condition.Append($"{field} NOT LIKE '{value}%'");
+            break;
+        case "not_like_end":
+            condition.Append($"{field} NOT LIKE '%{value}'");
+            break;
+        case "like":
+            condition.Append($"{field} LIKE '%{value}%'");
+            break;
+        case "not_like":
+            condition.Append($"{field} NOT LIKE '%{value}%'");
+            break;
+        default:
+            condition.Append($"{field} = '{value}'");
+            break;
+    }
+
+    return condition.ToString();
+}
+```
+
+}
