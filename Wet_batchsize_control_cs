@@ -104,5 +104,500 @@ protected void btnAdd_ServerClick(object sender, EventArgs e)
         if (string.IsNullOrEmpty(prodgId))
         {
             ShowMessage("請填寫 PRODG_ID", "warning");
-            Rest
+            RestoreLoginInfo();
+            return;
+        }
+
+        // 插入資料到資料庫
+        bool success = InsertNewSetting(eqpId, prodgId, productGroup, prodspecId, 
+                                      opeNo, batchSize, minWaferCount, memo, userId);
+
+        if (success)
+        {
+            ShowMessage("新增成功", "success");
+            ClearForm();
+            LoadTableData();
+        }
+        else
+        {
+            ShowMessage("新增失敗", "error");
+        }
+
+        RestoreLoginInfo();
+    }
+    catch (Exception ex)
+    {
+        ShowMessage("新增失敗: " + ex.Message, "error");
+        RestoreLoginInfo();
+    }
+}
+
+// 功能3: 新增篩選條件
+protected void btnAddFilter_ServerClick(object sender, EventArgs e)
+{
+    try
+    {
+        string field = filterField.Value;
+        string operatorType = filterOperator.Value;
+        string value = filterValue.Value.Trim();
+        string logic = filterLogic.Value;
+
+        if (string.IsNullOrEmpty(value))
+        {
+            ShowMessage("請輸入篩選條件值", "warning");
+            RestoreLoginInfo();
+            return;
+        }
+
+        // 建立篩選條件
+        string newCondition = BuildFilterCondition(field, operatorType, value);
+
+        if (string.IsNullOrEmpty(FilterConditions))
+        {
+            FilterConditions = newCondition;
+        }
+        else
+        {
+            FilterConditions += " " + logic + " " + newCondition;
+        }
+
+        filterConditions.Value = FilterConditions;
+        filterValue.Value = ""; // 清空輸入值
+
+        ShowMessage("篩選條件已新增", "success");
+        RestoreLoginInfo();
+    }
+    catch (Exception ex)
+    {
+        ShowMessage("新增篩選條件失敗: " + ex.Message, "error");
+        RestoreLoginInfo();
+    }
+}
+
+// 執行篩選
+protected void btnExecuteFilter_ServerClick(object sender, EventArgs e)
+{
+    try
+    {
+        string filterConditionsText = filterConditions.Value.Trim();
+        FilterConditions = filterConditionsText;
+        
+        LoadTableData(filterConditionsText);
+        ShowMessage("篩選執行完成", "success");
+        RestoreLoginInfo();
+    }
+    catch (Exception ex)
+    {
+        ShowMessage("篩選執行失敗: " + ex.Message, "error");
+        RestoreLoginInfo();
+    }
+}
+
+// 清除篩選條件
+protected void btnClearFilter_ServerClick(object sender, EventArgs e)
+{
+    try
+    {
+        FilterConditions = "";
+        filterConditions.Value = "";
+        filterValue.Value = "";
+        
+        LoadTableData(); // 載入所有資料
+        ShowMessage("篩選條件已清除", "success");
+        RestoreLoginInfo();
+    }
+    catch (Exception ex)
+    {
+        ShowMessage("清除篩選條件失敗: " + ex.Message, "error");
+        RestoreLoginInfo();
+    }
+}
+
+// 功能4: 載入資料表內容
+private void LoadTableData(string filterConditionsText = "")
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "SELECT * FROM WET_BATCH_SIZE_CONTROL";
+            
+            if (!string.IsNullOrEmpty(filterConditionsText))
+            {
+                sql += " WHERE " + filterConditionsText;
+            }
+            
+            sql += " ORDER BY UPDATE_TIME DESC";
+
+            using (OracleDataAdapter adapter = new OracleDataAdapter(sql, conn))
+            {
+                DataTable dt = new DataTable();
+                adapter.Fill(dt);
+                
+                // 動態產生HTML表格
+                GenerateDataTable(dt);
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        ShowMessage("載入資料失敗: " + ex.Message, "error");
+        tableContainer.InnerHtml = "<div class='alert alert-danger'>載入資料失敗: " + ex.Message + "</div>";
+    }
+}
+
+// 動態產生資料表HTML
+private void GenerateDataTable(DataTable dt)
+{
+    StringBuilder html = new StringBuilder();
+    
+    html.AppendLine("<table class='table-custom'>");
+    
+    // 產生表頭
+    html.AppendLine("<thead>");
+    html.AppendLine("<tr>");
+    html.AppendLine("<th>Modify</th>");
+    html.AppendLine("<th>EQP_ID</th>");
+    html.AppendLine("<th>PRODG_ID</th>");
+    html.AppendLine("<th>PRODUCT_GROUP</th>");
+    html.AppendLine("<th>PRODSPEC_ID</th>");
+    html.AppendLine("<th>OPE_NO</th>");
+    html.AppendLine("<th>BATCH_SIZE</th>");
+    html.AppendLine("<th>MIN_BATCH_WAFER</th>");
+    html.AppendLine("<th>MEMO</th>");
+    html.AppendLine("<th>UPDATE_USER</th>");
+    html.AppendLine("<th>UPDATE_TIME</th>");
+    html.AppendLine("<th>啟用</th>");
+    html.AppendLine("</tr>");
+    html.AppendLine("</thead>");
+    
+    // 產生表格內容
+    html.AppendLine("<tbody>");
+    
+    if (dt.Rows.Count == 0)
+    {
+        html.AppendLine("<tr><td colspan='12' style='text-align: center; padding: 20px;'>沒有找到符合條件的資料</td></tr>");
+    }
+    else
+    {
+        foreach (DataRow row in dt.Rows)
+        {
+            html.AppendLine("<tr>");
+            
+            // Modify 欄位
+            html.AppendLine("<td class='modify-cell'>");
+            html.AppendFormat("<select class='form-control' onchange='handleModifyAction(this, {0})'>", row["ID"]);
+            html.AppendLine("<option value=''>選擇動作</option>");
+            html.AppendLine("<option value='update'>更新</option>");
+            html.AppendLine("<option value='delete'>刪除</option>");
+            html.AppendLine("</select>");
+            html.AppendLine("</td>");
+            
+            // 資料欄位
+            html.AppendFormat("<td>{0}</td>", row["EQP_ID"]);
+            html.AppendFormat("<td>{0}</td>", row["PRODG_ID"]);
+            html.AppendFormat("<td>{0}</td>", row["PRODUCT_GROUP"]);
+            html.AppendFormat("<td>{0}</td>", row["PRODSPEC_ID"]);
+            html.AppendFormat("<td>{0}</td>", row["OPE_NO"]);
+            html.AppendFormat("<td>{0}</td>", row["BATCH_SIZE"]);
+            html.AppendFormat("<td>{0}</td>", row["MIN_BATCH_WAFER"]);
+            html.AppendFormat("<td>{0}</td>", row["MEMO"]);
+            html.AppendFormat("<td>{0}</td>", row["UPDATE_USER"]);
+            html.AppendFormat("<td>{0:yyyy-MM-dd HH:mm}</td>", 
+                row["UPDATE_TIME"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["UPDATE_TIME"]));
+            
+            // 啟用欄位
+            string isChecked = row["ACTIVE"].ToString() == "Y" ? "checked" : "";
+            html.AppendLine("<td>");
+            html.AppendFormat("<input type='checkbox' {0} onchange='toggleActive({1}, this.checked)'>", 
+                isChecked, row["ID"]);
+            html.AppendLine("</td>");
+            
+            html.AppendLine("</tr>");
+        }
+    }
+    
+    html.AppendLine("</tbody>");
+    html.AppendLine("</table>");
+    
+    tableContainer.InnerHtml = html.ToString();
+}
+
+// 插入新設定
+private bool InsertNewSetting(string eqpId, string prodgId, string productGroup, 
+                             string prodspecId, string opeNo, string batchSize, 
+                             string minWaferCount, string memo, string updateUser)
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = @"INSERT INTO WET_BATCH_SIZE_CONTROL 
+                          (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, 
+                           BATCH_SIZE, MIN_BATCH_WAFER, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE)
+                          VALUES 
+                          (:EQP_ID, :PRODG_ID, :PRODUCT_GROUP, :PRODSPEC_ID, :OPE_NO, 
+                           :BATCH_SIZE, :MIN_BATCH_WAFER, :MEMO, :UPDATE_USER, SYSDATE, 'Y')";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":EQP_ID", OracleType.VarChar).Value = eqpId ?? "";
+                cmd.Parameters.Add(":PRODG_ID", OracleType.VarChar).Value = prodgId ?? "";
+                cmd.Parameters.Add(":PRODUCT_GROUP", OracleType.VarChar).Value = productGroup ?? "";
+                cmd.Parameters.Add(":PRODSPEC_ID", OracleType.VarChar).Value = prodspecId ?? "";
+                cmd.Parameters.Add(":OPE_NO", OracleType.VarChar).Value = opeNo ?? "";
+                cmd.Parameters.Add(":BATCH_SIZE", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(batchSize) ? (object)DBNull.Value : Convert.ToInt32(batchSize);
+                cmd.Parameters.Add(":MIN_BATCH_WAFER", OracleType.Number).Value = 
+                    string.IsNullOrEmpty(minWaferCount) ? (object)DBNull.Value : Convert.ToInt32(minWaferCount);
+                cmd.Parameters.Add(":MEMO", OracleType.VarChar).Value = memo ?? "";
+                cmd.Parameters.Add(":UPDATE_USER", OracleType.VarChar).Value = updateUser;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("InsertNewSetting Error: " + ex.Message);
+        return false;
+    }
+}
+
+// 權限驗證函數
+private static bool RTD_ACCESS_CONTROL(string userID, string password)
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = @"SELECT COUNT(*) FROM USER_ACCESS_CONTROL 
+                          WHERE USER_ID = :USER_ID AND PASSWORD = :PASSWORD AND ACTIVE = 'Y'";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":USER_ID", OracleType.VarChar).Value = userID;
+                cmd.Parameters.Add(":PASSWORD", OracleType.VarChar).Value = password;
+
+                int count = Convert.ToInt32(cmd.ExecuteScalar());
+                return count > 0;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("RTD_ACCESS_CONTROL Error: " + ex.Message);
+        return false;
+    }
+}
+
+// 建立篩選條件
+private string BuildFilterCondition(string field, string operatorType, string value)
+{
+    StringBuilder condition = new StringBuilder();
+    
+    switch (operatorType)
+    {
+        case "=":
+            condition.Append($"{field} = '{value}'");
+            break;
+        case "!=":
+            condition.Append($"{field} != '{value}'");
+            break;
+        case ">":
+            condition.Append($"{field} > '{value}'");
+            break;
+        case ">=":
+            condition.Append($"{field} >= '{value}'");
+            break;
+        case "<":
+            condition.Append($"{field} < '{value}'");
+            break;
+        case "<=":
+            condition.Append($"{field} <= '{value}'");
+            break;
+        case "like_start":
+            condition.Append($"{field} LIKE '{value}%'");
+            break;
+        case "like_end":
+            condition.Append($"{field} LIKE '%{value}'");
+            break;
+        case "not_like_start":
+            condition.Append($"{field} NOT LIKE '{value}%'");
+            break;
+        case "not_like_end":
+            condition.Append($"{field} NOT LIKE '%{value}'");
+            break;
+        case "like":
+            condition.Append($"{field} LIKE '%{value}%'");
+            break;
+        case "not_like":
+            condition.Append($"{field} NOT LIKE '%{value}%'");
+            break;
+        default:
+            condition.Append($"{field} = '{value}'");
+            break;
+    }
+
+    return condition.ToString();
+}
+
+// 清空表單
+private void ClearForm()
+{
+    txb_eqpid.Value = "";
+    txb_prodgid.Value = "";
+    tbx_prodgrp.Value = "";
+    tbx_prodspecid.Value = "";
+    tbx_openo.Value = "";
+    batch_size.Value = "";
+    tbx_min_wafer_cnt.Value = "";
+    tbx_memo.Value = "";
+}
+
+// 功能2: 恢復登入資訊
+private void RestoreLoginInfo()
+{
+    if (RememberMe && !string.IsNullOrEmpty(UserID) && !string.IsNullOrEmpty(Password))
+    {
+        userID.Value = UserID;
+        password.Value = Password;
+        rememberMe.Checked = true;
+    }
+}
+
+// 顯示訊息
+private void ShowMessage(string message, string messageType)
+{
+    pnlMessage.Visible = true;
+    lblMessage.Text = message;
+    
+    // 根據訊息類型設定樣式
+    switch (messageType.ToLower())
+    {
+        case "success":
+            pnlMessage.CssClass = "alert alert-success";
+            break;
+        case "error":
+            pnlMessage.CssClass = "alert alert-danger";
+            break;
+        case "warning":
+            pnlMessage.CssClass = "alert alert-warning";
+            break;
+        case "info":
+            pnlMessage.CssClass = "alert alert-info";
+            break;
+        default:
+            pnlMessage.CssClass = "alert alert-info";
+            break;
+    }
+    
+    // 設定訊息自動隱藏
+    ClientScript.RegisterStartupScript(this.GetType(), "HideMessage", 
+        "setTimeout(function(){ var panel = document.getElementById('" + pnlMessage.ClientID + "'); if(panel) panel.style.display='none'; }, 5000);", true);
+}
+
+// 更新狀態資訊
+private void UpdateStatusInfo()
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "SELECT MAX(UPDATE_TIME) FROM WET_BATCH_SIZE_CONTROL";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                object result = cmd.ExecuteScalar();
+                if (result != null && result != DBNull.Value)
+                {
+                    DateTime lastUpdate = Convert.ToDateTime(result);
+                    ClientScript.RegisterStartupScript(this.GetType(), "UpdateTime", 
+                        "document.getElementById('lastUpdateTime').innerHTML = '" + 
+                        lastUpdate.ToString("yyyy-MM-dd HH:mm:ss") + "';", true);
+                }
+            }
+        }
+
+        // 設定上傳時間為當前時間
+        ClientScript.RegisterStartupScript(this.GetType(), "UploadTime", 
+            "document.getElementById('lastUploadTime').innerHTML = '" + 
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "';", true);
+    }
+    catch (Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("UpdateStatusInfo Error: " + ex.Message);
+    }
+}
 ```
+
+}
+
+// 用於 JavaScript 回調的 Web Method（可選）
+public partial class WetBatchsizeControl : System.Web.UI.Page
+{
+[System.Web.Services.WebMethod]
+public static string DeleteRecord(int recordId, string userId, string pwd)
+{
+try
+{
+// 驗證使用者身分
+if (!RTD_ACCESS_CONTROL(userId, pwd))
+{
+return “身分驗證失敗”;
+}
+
+```
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "DELETE FROM WET_BATCH_SIZE_CONTROL WHERE ID = :ID";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":ID", OracleType.Number).Value = recordId;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "刪除成功" : "刪除失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "刪除失敗: " + ex.Message;
+    }
+}
+
+[System.Web.Services.WebMethod]
+public static string ToggleActive(int recordId, bool isActive)
+{
+    try
+    {
+        using (OracleConnection conn = new OracleConnection(connectionString))
+        {
+            conn.Open();
+            string sql = "UPDATE WET_BATCH_SIZE_CONTROL SET ACTIVE = :ACTIVE WHERE ID = :ID";
+
+            using (OracleCommand cmd = new OracleCommand(sql, conn))
+            {
+                cmd.Parameters.Add(":ACTIVE", OracleType.VarChar).Value = isActive ? "Y" : "N";
+                cmd.Parameters.Add(":ID", OracleType.Number).Value = recordId;
+
+                int result = cmd.ExecuteNonQuery();
+                return result > 0 ? "狀態更新成功" : "狀態更新失敗";
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        return "狀態更新失敗: " + ex.Message;
+    }
+}
+```
+
+}
