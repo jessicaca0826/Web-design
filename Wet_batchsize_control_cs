@@ -1,34 +1,49 @@
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
+using System.Data.OleDb;
 using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using System.Configuration;
+using P12RTD_DLL;
 
-namespace YourNamespace
-{
+
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
-// 資料庫連線字串 - 請在 web.config 中設定
-private string ConnectionString => ConfigurationManager.ConnectionStrings[“DefaultConnection”].ConnectionString;
+    string vCheckResult;
+    string vFunctionName = "WET_BATCH_SIZE_SETTING";
 
-```
-    // 篩選條件集合
-    private List<FilterCondition> FilterConditions
+    Access_control RTD_ACCESS_CONTROL = new Access_control();
+
+    // 資料庫連線字串 - 請在 web.config 中設定
+    private string ConnectionString
     {
         get
         {
+            if (ConfigurationManager.ConnectionStrings["P12_RTD"] != null)
+                return ConfigurationManager.ConnectionStrings["P12_RTD"].ConnectionString;
+            else
+                return "Provider=OraOLEDB.Oracle;Data Source=ODSP12;User ID=readuser_rtd";
+        }
+    }
+
+    // 篩選條件集合
+    private ArrayList FilterConditions
+    {
+        get
+        {
+            // 從Session中取得篩選條件，如果不存在則再建立新的
+            // 從Session["FilterConditions"]中讀取
             if (Session["FilterConditions"] == null)
-                Session["FilterConditions"] = new List<FilterCondition>();
-            return (List<FilterCondition>)Session["FilterConditions"];
+                Session["FilterConditions"] = new ArrayList();
+            return (ArrayList)Session["FilterConditions"];
         }
         set
         {
+            // 將篩選條件儲存到Session["FilterConditions"]中
             Session["FilterConditions"] = value;
         }
     }
@@ -52,6 +67,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
     private void InitializePage()
     {
         // 設定初始時間 (IE 兼容寫法)
+        // need modify, 要抓RTD_TABLE_INFO值
         string timeScript = @"
             if (document.getElementById('lastUpdateTime')) {
                 document.getElementById('lastUpdateTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
@@ -76,7 +92,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
     {
         // 註冊 jQuery 相關腳本 (IE8+ 兼容)
         string script = @"
-            <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js'></script>
+            <script type='text/javascript' src='../script/jquery-3.7.0.min.js'></script>
             <script type='text/javascript'>
             $(document).ready(function() {
                 // 數字輸入驗證 (IE 兼容)
@@ -111,7 +127,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                 for (var i = 0; i < required.length; i++) {
                     var field = document.getElementById(required[i]);
                     if (!field || field.value == '') {
-                        alert('請填寫所有必填欄位！');
+                        alert('請填寫所有必填欄位!');
                         if (field) field.focus();
                         return false;
                     }
@@ -119,7 +135,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                 
                 var batchSize = document.getElementById('batch_size');
                 if (!batchSize || batchSize.value == '') {
-                    alert('請選擇 Batch Size！');
+                    alert('請選擇 Batch Size!');
                     if (batchSize) batchSize.focus();
                     return false;
                 }
@@ -135,7 +151,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                 var logic = document.getElementById('filterLogic').value;
                 
                 if (value == '') {
-                    alert('請輸入篩選條件值！');
+                    alert('請輸入篩選條件值!');
                     document.getElementById('filterValue').focus();
                     return;
                 }
@@ -166,19 +182,19 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             
             // 表格操作函數 (IE 兼容)
             function updateActive(id, isActive) {
-                if (confirm('確定要變更此設定的啟用狀態嗎？')) {
+                if (confirm('確定要變更此設定的啟用狀態嗎?')) {
                     __doPostBack('UpdateActive', id + '|' + isActive);
                 }
             }
             
             function deleteRecord(id) {
-                if (confirm('確定要刪除此筆資料嗎？此操作無法復原！')) {
+                if (confirm('確定要刪除此筆資料嗎?此操作無法復原!')) {
                     __doPostBack('DeleteRecord', id);
                 }
             }
             </script>";
             
-        ClientScript.RegisterStartupScript(this.GetType(), "InitScript", script);
+        ClientScript.RegisterStartupScript(this.GetType(), "InitScript", script, true);
     }
 
     protected void btnAdd_SeverClick(object sender, EventArgs e)
@@ -192,7 +208,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             // 驗證使用者權限
             if (!ValidateUser())
             {
-                ShowMessage("使用者驗證失敗，請檢查 ID 和密碼！", "alert-danger");
+                ShowMessage("使用者驗證失敗", "alert-danger");
                 return;
             }
 
@@ -202,7 +218,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             // 新增資料到資料庫
             if (InsertBatchSizeSetting())
             {
-                ShowMessage("新增設定成功！", "alert-success");
+                ShowMessage("新增設定成功", "alert-success");
                 ClearForm();
                 LoadData(); // 重新載入資料
                 
@@ -212,13 +228,12 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             }
             else
             {
-                ShowMessage("新增設定失敗，請檢查資料是否重複！", "alert-danger");
+                ShowMessage("新增設定失敗", "alert-danger");
             }
         }
         catch (Exception ex)
         {
-            ShowMessage("系統錯誤：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("系統錯誤: " + ex.Message, "alert-danger");
         }
     }
 
@@ -231,8 +246,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("篩選執行失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("篩選執行失敗: " + ex.Message, "alert-danger");
         }
     }
 
@@ -247,8 +261,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("清除篩選條件失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("清除篩選條件失敗: " + ex.Message, "alert-danger");
         }
     }
 
@@ -299,8 +312,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("新增篩選條件失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("新增篩選條件失敗: " + ex.Message, "alert-danger");
         }
     }
 
@@ -314,12 +326,12 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             
             if (parts.Length >= 2 && int.TryParse(parts[0], out id) && bool.TryParse(parts[1], out isActive))
             {
-                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
-                    string query = "UPDATE WET_BATCH_SIZE_CONTROL SET ACTIVE = @Active, UPDATE_USER = @UpdateUser, UPDATE_TIME = @UpdateTime WHERE ID = @Id";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = @Active, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID = @Id";
+                    using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@Active", isActive);
+                        cmd.Parameters.AddWithValue("@Active", isActive ? 1 : 0);  //Oracle的boolean轉換
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
                         cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
                         cmd.Parameters.AddWithValue("@Id", id);
@@ -329,7 +341,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                         
                         if (result > 0)
                         {
-                            ShowMessage("設定狀態已更新為：" + (isActive ? "啟用" : "停用"), "alert-success");
+                            ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
                             LoadData();
                         }
                         else
@@ -342,8 +354,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("更新狀態失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("更新狀態失敗: " + ex.Message, "alert-danger");
         }
     }
 
@@ -354,12 +365,12 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             int id;
             if (int.TryParse(idString, out id))
             {
-                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
                     // 軟刪除：將 ACTIVE 設為 false
-                    string query = "UPDATE WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = @UpdateTime WHERE ID = @Id";
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID = @Id";
                     
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
                         cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
@@ -383,8 +394,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("刪除記錄失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("刪除記錄失敗: " + ex.Message, "alert-danger");
         }
     }
 
@@ -423,7 +433,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
     }
 
-    private bool ValidateUser()
+    private bool ValidateUser() //need modify
     {
         string userId = userID.Value != null ? userID.Value.Trim() : "";
         string password = passward.Value != null ? passward.Value.Trim() : "";
@@ -431,34 +441,32 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(password))
             return false;
 
-        // 簡單的驗證 - 實際專案中請使用適當的驗證機制
         try
         {
-            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "SELECT COUNT(*) FROM USERS WHERE USER_ID = @UserId AND PASSWORD = @Password AND ACTIVE = 1";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                vCheckResult = RTD_ACCESS_CONTROL.Check_Authority(vFunctionName, userId, password);
+                if (vCheckResult == "Authentication Fail")
                 {
-                    cmd.Parameters.AddWithValue("@UserId", userId);
-                    cmd.Parameters.AddWithValue("@Password", password);
-                    
-                    conn.Open();
-                    object result = cmd.ExecuteScalar();
-                    int count = result != null ? Convert.ToInt32(result) : 0;
-                    return count > 0;
+                    this.Session.Remove("Password");
+                    return false;
+                }
+                else
+                {
+                    return true;
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // 如果資料庫驗證失敗，使用預設帳號
-            return (userId == "admin" && password == "admin123");
+            ShowMessage("登入失敗: " + ex.Message, "alert-danger");
+            return false;
         }
     }
 
     private bool ValidateForm()
     {
-        List<string> errors = new List<string>();
+        ArrayList errors = new ArrayList();
 
         if (string.IsNullOrEmpty(txb_eqpid.Value))
             errors.Add("EQP_ID 不能為空");
@@ -488,7 +496,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
 
         if (errors.Count > 0)
         {
-            ShowMessage("表單驗證錯誤：<br>" + string.Join("<br>", errors.ToArray()), "alert-danger");
+            ShowMessage("表單驗證錯誤:<br>" + string.Join("<br>", errors.ToArray()), "alert-danger");
             return false;
         }
 
@@ -517,15 +525,15 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
     {
         try
         {
-            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
                 string query = @"
-                    INSERT INTO WET_BATCH_SIZE_CONTROL 
-                    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, CREATE_USER, CREATE_TIME, UPDATE_USER, UPDATE_TIME, ACTIVE)
+                    INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
+                    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE)
                     VALUES 
-                    (@EqpId, @ProdgId, @ProductGroup, @ProdspecId, @OpeNo, @BatchSize, @MinWaferCount, @Memo, @CreateUser, @CreateTime, @UpdateUser, @UpdateTime, 1)";
+                    (@EqpId, @ProdgId, @ProductGroup, @ProdspecId, @OpeNo, @BatchSize, @MinWaferCount, @Memo, @UpdateUser, SYSDATE, 1)";
 
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@EqpId", txb_eqpid.Value.Trim());
                     cmd.Parameters.AddWithValue("@ProdgId", txb_prodgid.Value.Trim());
@@ -549,10 +557,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                     }
                     
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@CreateUser", userID.Value.Trim());
-                    cmd.Parameters.AddWithValue("@CreateTime", DateTime.Now);
                     cmd.Parameters.AddWithValue("@UpdateUser", userID.Value.Trim());
-                    cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
@@ -560,11 +565,11 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                 }
             }
         }
-        catch (SqlException ex)
+        catch (OleDbException ex)
         {
-            if (ex.Number == 2627 || ex.Number == 2601) // 主鍵或唯一約束違反
+            if (ex.ErrorCode == -2147467259) // 主鍵或唯一約束違反
             {
-                ShowMessage("資料已存在，請檢查是否重複新增！", "alert-warning");
+                ShowMessage("資料已存在，請檢查是否重複新增!", "alert-warning");
                 return false;
             }
             throw;
@@ -587,14 +592,13 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         }
         catch (Exception ex)
         {
-            ShowMessage("載入資料失敗：" + ex.Message, "alert-danger");
-            LogError(ex);
+            ShowMessage("載入資料失敗: " + ex.Message, "alert-danger");
         }
     }
 
     private DataTable GetBatchSizeData()
     {
-        using (SqlConnection conn = new SqlConnection(ConnectionString))
+        using (OleDbConnection conn = new OleDbConnection(ConnectionString))
         {
             StringBuilder query = new StringBuilder(@"
                 SELECT 
@@ -607,12 +611,10 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                     BATCH_SIZE,
                     MIN_WAFER_COUNT,
                     MEMO,
-                    CREATE_USER,
-                    CREATE_TIME,
                     UPDATE_USER,
                     UPDATE_TIME,
                     ACTIVE
-                FROM WET_BATCH_SIZE_CONTROL");
+                FROM RTD.WET_BATCH_SIZE_CONTROL");
 
             // 加入篩選條件
             if (FilterConditions.Count > 0)
@@ -628,9 +630,9 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                 }
             }
 
-            query.Append(" ORDER BY UPDATE_TIME DESC, CREATE_TIME DESC");
+            query.Append(" ORDER BY UPDATE_TIME DESC ");
 
-            using (SqlCommand cmd = new SqlCommand(query.ToString(), conn))
+            using (OleDbCommand cmd = new OleDbCommand(query.ToString(), conn))
             {
                 // 加入參數
                 for (int i = 0; i < FilterConditions.Count; i++)
@@ -662,7 +664,7 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
                     }
                 }
 
-                using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                using (OleDbDataAdapter adapter = new OleDbDataAdapter(cmd))
                 {
                     DataTable dt = new DataTable();
                     conn.Open();
@@ -710,7 +712,6 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         
         html.Append("<table class='table-custom'>");
         html.Append("<thead><tr>");
-        html.Append("<th style='width: 60px;'>序號</th>");
         html.Append("<th style='width: 80px;'>EQP_ID</th>");
         html.Append("<th style='width: 100px;'>PRODG_ID</th>");
         html.Append("<th style='width: 120px;'>PRODUCT_GROUP</th>");
@@ -719,8 +720,6 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         html.Append("<th style='width: 80px;'>BATCH_SIZE</th>");
         html.Append("<th style='width: 100px;'>MIN_WAFER_COUNT</th>");
         html.Append("<th style='width: 150px;'>MEMO</th>");
-        html.Append("<th style='width: 80px;'>CREATE_USER</th>");
-        html.Append("<th style='width: 140px;'>CREATE_TIME</th>");
         html.Append("<th style='width: 80px;'>UPDATE_USER</th>");
         html.Append("<th style='width: 140px;'>UPDATE_TIME</th>");
         html.Append("<th style='width: 60px;'>啟用</th>");
@@ -742,8 +741,6 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
             html.Append("<td>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
             html.Append("<td>" + row["MIN_WAFER_COUNT"] + "</td>");
             html.Append("<td>" + row["MEMO"] + "</td>");
-            html.Append("<td>" + row["CREATE_USER"] + "</td>");
-            html.Append("<td>" + Convert.ToDateTime(row["CREATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
             html.Append("<td>" + row["UPDATE_USER"] + "</td>");
             html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
             
@@ -815,25 +812,6 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         ClientScript.RegisterStartupScript(this.GetType(), "hideMessage", script, true);
     }
 
-    private void LogError(Exception ex)
-    {
-        // 簡單的錯誤記錄 - 可根據需要擴展
-        System.Diagnostics.Debug.WriteLine("Error: " + ex.Message);
-        System.Diagnostics.Debug.WriteLine("Stack Trace: " + ex.StackTrace);
-        
-        // 可以寫入事件記錄或檔案
-        try
-        {
-            System.Diagnostics.EventLog.WriteEntry("WetBatchSizeControl", 
-                "Error: " + ex.Message + "\r\nStack Trace: " + ex.StackTrace, 
-                System.Diagnostics.EventLogEntryType.Error);
-        }
-        catch
-        {
-            // 如果無法寫入事件記錄，則忽略
-        }
-    }
-
     // 篩選條件類別
     public class FilterCondition
     {
@@ -843,6 +821,4 @@ private string ConnectionString => ConfigurationManager.ConnectionStrings[“Def
         public string Logic { get; set; }
     }
 }
-```
 
-}
