@@ -1,0 +1,276 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Data;
+using System.Data.OleDb;
+using System.Configuration;
+//using LoginCheckServiceProvider;
+
+namespace P12RTD_DLL
+{   
+    public class Access_control
+    {
+        OleDbConnection Conn;
+        DataSet DS = new DataSet();
+        OleDbDataAdapter AdptTemp;
+        OleDbCommand CmdUpdate;
+        String sqlstring;
+        String vResult;
+
+
+        public string Check_Authority(string sFunctionName, string sUserID, string sPassword)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            sqlstring = " SELECT * FROM RTD.RTD_ACCESS_CONTROL WHERE id='" + sUserID + "' ";
+            sqlstring += " AND password='" + sPassword + "'";
+            sqlstring += " AND Function in ('" + sFunctionName + "','POWER_USER')";
+
+            try
+            {
+                Conn.Open();
+                AdptTemp = new OleDbDataAdapter(sqlstring, Conn);
+                AdptTemp.Fill(DS, "Auth_check");
+                if (DS.Tables["Auth_check"].Rows.Count == 0)
+                {
+                    vResult = "Authentication Fail";
+                    //return "Authentication Fail";
+                }
+                else
+                {
+                    vResult = "Authentication Success";
+                    //return "Authentication Success";
+                }
+                AdptTemp.Dispose();
+                DS.Clear();
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+                vResult = "Authentication Fail";
+            }
+            finally
+            {
+                Conn.Close();
+            }
+            return vResult;
+
+        }
+        public string Check_Dept(string sEMP_ID, string sDept_ID)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            sqlstring = " SELECT * FROM P12AB.HR_PSC_USERS WHERE QUIT_DATE IS NULL ";
+            sqlstring += " AND REPLACE(DEPT_ID,'PT14','PY10') IN ('" + sDept_ID + "') ";
+            //sqlstring += " AND DEPT_ID IN ('" + sDept_ID + "') ";
+            sqlstring += " AND EMP_ID ='" + sEMP_ID + "' ";
+            try
+            {
+                Conn.Open();
+                AdptTemp = new OleDbDataAdapter(sqlstring, Conn);
+                AdptTemp.Fill(DS, "Check_Dept");
+                if (DS.Tables["Check_Dept"].Rows.Count == 0)
+                {
+                    vResult = "Fail";
+                    //return "Fail";
+                }
+                else
+                {
+                    vResult = "Success";
+                    //return "Success";
+                }
+                AdptTemp.Dispose();
+                DS.Clear();
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+                vResult = "Fail";
+            }
+            finally
+            {
+                Conn.Close();
+            }
+            
+            return vResult;
+
+        }
+        public string Find_Dept(string sEMP_ID)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            sqlstring = " SELECT distinct dept_id FROM P12AB.HR_PSC_USERS WHERE QUIT_DATE IS NULL ";
+            sqlstring += " AND EMP_ID ='" + sEMP_ID + "' ";
+            try
+            {
+                Conn.Open();
+                AdptTemp = new OleDbDataAdapter(sqlstring, Conn);
+                AdptTemp.Fill(DS, "Find_Dept");
+                if (DS.Tables["Find_Dept"].Rows.Count == 0)
+                {
+                    vResult = "Unknown";
+                    //return "Unknown";
+                }
+                else
+                {
+                    vResult = DS.Tables["Find_Dept"].Rows[0][0].ToString();
+                    //return DS.Tables["Find_Dept"].Rows[0][0].ToString();
+
+                }
+                AdptTemp.Dispose();
+                DS.Clear();
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+                vResult = "Unknown";
+            }
+            finally
+            {
+                Conn.Close();
+            }
+
+            return vResult;
+        }
+    }
+    public class Table_Info_control
+    {
+        OleDbConnection Conn;
+        DataSet DS = new DataSet();
+        OleDbDataAdapter AdptTemp;
+        OleDbCommand CmdUpdate;
+        String sqlstring;
+
+        public DataSet Find_Data(string sFunctionName)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            sqlstring = "SELECT * from RTD.RTD_TABLE_INFO ";
+            sqlstring += " WHERE FUNCTION='" + sFunctionName + "'";
+
+            try
+            {
+                Conn.Open();
+                AdptTemp = new OleDbDataAdapter(sqlstring, Conn);
+                AdptTemp.Fill(DS, sFunctionName);
+                AdptTemp.Dispose();
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                Conn.Close();
+            }
+
+            return DS;
+
+        }
+        public void Update_LastUpdateTime(string sFunctionName, string sUserID)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            
+            sqlstring = "UPDATE RTD.RTD_TABLE_INFO SET LAST_UPDATE_TIME = to_char(sysdate, 'yyyy/mm/dd hh24:mi:ss') ";
+            if (sUserID != "" && sUserID != null)
+                sqlstring += "    ,UPDATE_USER='" + sUserID + "' ";
+            sqlstring += " WHERE  FUNCTION='" + sFunctionName + "'";
+
+            try
+            {
+                Conn.Open();
+                CmdUpdate = new OleDbCommand(sqlstring, Conn);
+                CmdUpdate.ExecuteNonQuery();
+
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                Conn.Close();
+            }
+
+        }
+        public void Update_LastUpload2RTDTime(string sFunctionName, string sUserID)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            sqlstring = "UPDATE RTD.RTD_TABLE_INFO SET LAST_UPLOAD_2_RTD_TIME = to_char(sysdate, 'yyyy/mm/dd hh24:mi:ss') ";
+            if (sUserID != "" && sUserID != null)
+                sqlstring += "    ,UPDATE_USER='" + sUserID + "' ";
+            sqlstring += " WHERE  FUNCTION='" + sFunctionName + "'";
+
+            try
+            {
+                Conn.Open();
+                CmdUpdate = new OleDbCommand(sqlstring, Conn);
+                CmdUpdate.ExecuteNonQuery();
+
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                Conn.Close();
+            }
+        }
+    }
+    public class OraDB_SQL
+    {
+        OleDbConnection Conn;
+        DataSet DS = new DataSet();
+        OleDbDataAdapter AdptTemp;
+        OleDbCommand CmdIUD;
+        //String sqlstring;
+
+        public DataSet Exec_SelectSQL(string sqlstring, string sTempTableName)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            
+            try
+            {
+                Conn.Open();
+                AdptTemp = new OleDbDataAdapter(sqlstring, Conn);
+                AdptTemp.Fill(DS, sTempTableName);
+                AdptTemp.Dispose();
+                Conn.Close(); 
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            finally
+            { 
+                Conn.Close(); 
+            }
+            return DS;
+
+        }
+        public void Exec_IUD(string sqlstring)
+        {
+            Conn = new OleDbConnection(ConfigurationSettings.AppSettings["ReaduserRTD_P12"]);
+            
+            try
+            {
+                Conn.Open();
+                CmdIUD = new OleDbCommand(sqlstring, Conn);
+                CmdIUD.ExecuteNonQuery();
+                Conn.Close();
+            }
+            catch (Exception ex)
+            {
+                
+            }
+            finally
+            {
+                Conn.Close();
+            }
+            
+        }
+    }
+
+}
