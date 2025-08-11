@@ -9,26 +9,14 @@ using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using System.Configuration;
 using P12RTD_DLL;
-
+using System.Runtime.Remoting.Messaging;
 
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
     string vCheckResult;
     string vFunctionName = "WET_BATCH_SIZE_SETTING";
-
+    string ConnectionString = ConfigurationSettings.AppSettings["RTD_P12"];
     Access_control RTD_ACCESS_CONTROL = new Access_control();
-
-    // 資料庫連線字串 - 請在 web.config 中設定
-    private string ConnectionString
-    {
-        get
-        {
-            if (ConfigurationManager.ConnectionStrings["P12_RTD"] != null)
-                return ConfigurationManager.ConnectionStrings["P12_RTD"].ConnectionString;
-            else
-                return "Provider=OraOLEDB.Oracle;Data Source=ODSP12;User ID=readuser_rtd";
-        }
-    }
 
     // 篩選條件集合
     private ArrayList FilterConditions
@@ -48,6 +36,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
@@ -56,10 +45,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             LoadData();
             LoadUserCredentials(); // 從 Session 載入使用者資訊
         }
-        
+
         // 更新篩選條件顯示
         UpdateFilterDisplay();
-        
+
         // 註冊客戶端腳本 (IE 兼容)
         RegisterClientScript();
     }
@@ -193,7 +182,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 }
             }
             </script>";
-            
+
         ClientScript.RegisterStartupScript(this.GetType(), "InitScript", script, true);
     }
 
@@ -221,9 +210,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 ShowMessage("新增設定成功", "alert-success");
                 ClearForm();
                 LoadData(); // 重新載入資料
-                
+
                 // 更新時間戳
-                ClientScript.RegisterStartupScript(this.GetType(), "updateTimeAfterAdd", 
+                ClientScript.RegisterStartupScript(this.GetType(), "updateTimeAfterAdd",
                     "updateLastUpdateTime();", true);
             }
             else
@@ -268,7 +257,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     protected override void RaisePostBackEvent(IPostBackEventHandler sourceControl, string eventArgument)
     {
         string eventTarget = Request.Form["__EVENTTARGET"];
-        
+
         if (eventTarget == "AddFilter")
         {
             AddFilterCondition(eventArgument);
@@ -294,19 +283,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             string[] parts = conditionData.Split('|');
             if (parts.Length >= 4)
             {
-                var condition = new FilterCondition
-                {
-                    Field = parts[0],
-                    Operator = parts[1],
-                    Value = parts[2],
-                    Logic = parts[3]
-                };
+                FilterCondition condition = new FilterCondition(parts[0], parts[1], parts[2], parts[3]);
 
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
-                
+
                 // 清空輸入框 (IE 兼容)
-                ClientScript.RegisterStartupScript(this.GetType(), "clearFilter", 
+                ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
             }
         }
@@ -323,7 +306,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             string[] parts = data.Split('|');
             int id;
             bool isActive;
-            
+
             if (parts.Length >= 2 && int.TryParse(parts[0], out id) && bool.TryParse(parts[1], out isActive))
             {
                 using (OleDbConnection conn = new OleDbConnection(ConnectionString))
@@ -335,10 +318,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
                         cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
                         cmd.Parameters.AddWithValue("@Id", id);
-                        
+
                         conn.Open();
                         int result = cmd.ExecuteNonQuery();
-                        
+
                         if (result > 0)
                         {
                             ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
@@ -369,16 +352,16 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 {
                     // 軟刪除：將 ACTIVE 設為 false
                     string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID = @Id";
-                    
+
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
                         cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
                         cmd.Parameters.AddWithValue("@Id", id);
-                        
+
                         conn.Open();
                         int result = cmd.ExecuteNonQuery();
-                        
+
                         if (result > 0)
                         {
                             ShowMessage("記錄已成功刪除", "alert-success");
@@ -403,10 +386,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < FilterConditions.Count; i++)
         {
-            var condition = FilterConditions[i];
+            FilterCondition condition = (FilterCondition)FilterConditions[i];
             if (i > 0)
                 sb.Append(" " + condition.Logic + " ");
-            
+
             string operatorText = GetOperatorText(condition.Operator);
             sb.Append(condition.Field + " " + operatorText + " '" + condition.Value + "'");
         }
@@ -442,7 +425,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             return false;
 
         try
-        {
+        {   
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
                 vCheckResult = RTD_ACCESS_CONTROL.Check_Authority(vFunctionName, userId, password);
@@ -540,11 +523,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     cmd.Parameters.AddWithValue("@ProductGroup", tbx_prodgrp.Value.Trim());
                     cmd.Parameters.AddWithValue("@ProdspecId", tbx_prodspecid.Value.Trim());
                     cmd.Parameters.AddWithValue("@OpeNo", tbx_openo.Value.Trim());
-                    
+
                     int batchSizeValue;
                     int.TryParse(batch_size.Value, out batchSizeValue);
                     cmd.Parameters.AddWithValue("@BatchSize", batchSizeValue);
-                    
+
                     if (string.IsNullOrEmpty(tbx_min_wafer_cnt.Value))
                     {
                         cmd.Parameters.AddWithValue("@MinWaferCount", DBNull.Value);
@@ -555,7 +538,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                         int.TryParse(tbx_min_wafer_cnt.Value, out waferCount);
                         cmd.Parameters.AddWithValue("@MinWaferCount", waferCount);
                     }
-                    
+
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
                     cmd.Parameters.AddWithValue("@UpdateUser", userID.Value.Trim());
 
@@ -563,8 +546,14 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     int result = cmd.ExecuteNonQuery();
                     return result > 0;
                 }
+
+                Response.Write(query);
+
+
             }
         }
+
+
         catch (OleDbException ex)
         {
             if (ex.ErrorCode == -2147467259) // 主鍵或唯一約束違反
@@ -582,7 +571,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             DataTable dt = GetBatchSizeData();
             GenerateDataTable(dt);
-            
+
             // 更新上傳時間 (IE 兼容)
             string timeScript = @"
                 if (document.getElementById('lastUploadTime')) {
@@ -602,7 +591,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             StringBuilder query = new StringBuilder(@"
                 SELECT 
-                    ID,
+                    ID1,
                     EQP_ID,
                     PRODG_ID,
                     PRODUCT_GROUP,
@@ -622,10 +611,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 query.Append(" WHERE ");
                 for (int i = 0; i < FilterConditions.Count; i++)
                 {
-                    var condition = FilterConditions[i];
+                    FilterCondition condition = (FilterCondition)FilterConditions[i];
                     if (i > 0)
                         query.Append(" " + condition.Logic + " ");
-                    
+
                     query.Append(BuildWhereClause(condition, i));
                 }
             }
@@ -637,9 +626,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 // 加入參數
                 for (int i = 0; i < FilterConditions.Count; i++)
                 {
-                    var condition = FilterConditions[i];
+                    FilterCondition condition = (FilterCondition)FilterConditions[i];
                     string paramName = "@FilterValue" + i;
-                    
+
                     switch (condition.Operator)
                     {
                         case "like_start":
@@ -679,7 +668,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         string paramName = "@FilterValue" + index;
         string field = condition.Field;
-        
+
         switch (condition.Operator)
         {
             case "=":
@@ -709,7 +698,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     private void GenerateDataTable(DataTable dt)
     {
         StringBuilder html = new StringBuilder();
-        
+
         html.Append("<table class='table-custom'>");
         html.Append("<thead><tr>");
         html.Append("<th style='width: 80px;'>EQP_ID</th>");
@@ -725,9 +714,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         html.Append("<th style='width: 60px;'>啟用</th>");
         html.Append("<th style='width: 80px;'>操作</th>");
         html.Append("</tr></thead>");
-        
+
         html.Append("<tbody>");
-        
+
         for (int i = 0; i < dt.Rows.Count; i++)
         {
             DataRow row = dt.Rows[i];
@@ -743,30 +732,30 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             html.Append("<td>" + row["MEMO"] + "</td>");
             html.Append("<td>" + row["UPDATE_USER"] + "</td>");
             html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
-            
+
             // 啟用狀態
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
             html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick='updateActive(" + row["ID"] + ", this.checked)' />");
             html.Append("</td>");
-            
+
             // 操作按鈕
             html.Append("<td class='modify-cell'>");
             html.Append("<button type='button' class='btn btn-custom btn-sm' onclick='deleteRecord(" + row["ID"] + ")'>刪除</button>");
             html.Append("</td>");
-            
+
             html.Append("</tr>");
         }
-        
+
         html.Append("</tbody>");
         html.Append("</table>");
-        
+
         if (dt.Rows.Count == 0)
         {
             html.Clear();
             html.Append("<div class='alert alert-info' style='text-align: center;'>目前沒有符合條件的資料</div>");
         }
-        
+
         tableContainer.InnerHtml = html.ToString();
     }
 
@@ -774,7 +763,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         if (batchSize == null || batchSize == DBNull.Value)
             return "";
-            
+
         switch (batchSize.ToString())
         {
             case "1": return "單批";
@@ -800,7 +789,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         pnlMessage.Visible = true;
         pnlMessage.CssClass = "alert " + cssClass;
         lblMessage.Text = message;
-        
+
         // IE 兼容的自動隱藏訊息
         string script = @"
             setTimeout(function() {
@@ -815,10 +804,28 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     // 篩選條件類別
     public class FilterCondition
     {
-        public string Field { get; set; }
+        public string Field {  get; set; }
         public string Operator { get; set; }
         public string Value { get; set; }
         public string Logic { get; set; }
+
+        // 建構函數
+        public FilterCondition()
+        {
+            Field = "";
+            Operator = "";
+            Value = "";
+            Logic = "";
+        }
+
+        // 帶參數的建構函式
+        public FilterCondition(string field, string op, string value, string logic)
+        {
+            Field = field ?? "";
+            Operator = op ?? "";
+            Value = value ?? "";
+            Logic = logic ?? "";
+        }
     }
 }
 
