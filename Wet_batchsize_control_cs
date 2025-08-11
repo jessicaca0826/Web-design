@@ -10,6 +10,8 @@ using System.Web.UI.WebControls;
 using System.Configuration;
 using P12RTD_DLL;
 using System.Runtime.Remoting.Messaging;
+using System.Net.Cache;
+using System.Diagnostics.Eventing.Reader;
 
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
@@ -17,6 +19,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     string vFunctionName = "WET_BATCH_SIZE_SETTING";
     string ConnectionString = ConfigurationSettings.AppSettings["RTD_P12"];
     Access_control RTD_ACCESS_CONTROL = new Access_control();
+    Table_Info_control RTD_TABLE_INFO = new Table_Info_control();
 
     // 篩選條件集合
     private ArrayList FilterConditions
@@ -41,6 +44,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
+            if (Session["Message"] != null) {
+                ShowMessage(Session["Message"].ToString(), Session["MessageCss"].ToString());
+                Session.Remove("Message");
+                Session.Remove("MessageCss");
+            }
+            
             InitializePage();
             LoadData();
             LoadUserCredentials(); // 從 Session 載入使用者資訊
@@ -57,10 +66,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         // 設定初始時間 (IE 兼容寫法)
         // need modify, 要抓RTD_TABLE_INFO值
-        string timeScript = @"
-            if (document.getElementById('lastUpdateTime')) {
-                document.getElementById('lastUpdateTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
-            }";
+        //string timeScript = @"
+        //    if (document.getElementById('lastUpdateTime')) {
+        //        document.getElementById('lastUpdateTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
+        //    }";
+        DataSet ds_temp = new DataSet();
+        ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
+        string timeScript = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
         ClientScript.RegisterStartupScript(this.GetType(), "updateTime", timeScript, true);
     }
 
@@ -207,13 +219,16 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             // 新增資料到資料庫
             if (InsertBatchSizeSetting())
             {
-                ShowMessage("新增設定成功", "alert-success");
-                ClearForm();
-                LoadData(); // 重新載入資料
+                //ShowMessage("新增設定成功", "alert-success");
+                //ClearForm();
+                //LoadData(); // 重新載入資料
+                // 用TempData / Session保存提示訊息
+                Session["Message"] = "新增設定成功";
+                Session["MessageCss"] = "alert-success";
 
-                // 更新時間戳
-                ClientScript.RegisterStartupScript(this.GetType(), "updateTimeAfterAdd",
-                    "updateLastUpdateTime();", true);
+                // Redirect避免表單重送
+                Response.Redirect(Request.RawUrl);
+                Context.ApplicationInstance.CompleteRequest();
             }
             else
             {
@@ -311,12 +326,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             {
                 using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
-                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = @Active, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID = @Id";
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = @Active, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID1 = @Id";
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@Active", isActive ? 1 : 0);  //Oracle的boolean轉換
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
-                        cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
                         cmd.Parameters.AddWithValue("@Id", id);
 
                         conn.Open();
@@ -351,12 +365,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
                     // 軟刪除：將 ACTIVE 設為 false
-                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID = @Id";
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID1 = @Id";
 
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
-                        cmd.Parameters.AddWithValue("@UpdateTime", DateTime.Now);
                         cmd.Parameters.AddWithValue("@Id", id);
 
                         conn.Open();
@@ -512,9 +525,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             {
                 string query = @"
                     INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
-                    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE)
+                    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1)
                     VALUES 
-                    (@EqpId, @ProdgId, @ProductGroup, @ProdspecId, @OpeNo, @BatchSize, @MinWaferCount, @Memo, @UpdateUser, SYSDATE, 1)";
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, dbms_random.string('A', 16))";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -540,7 +553,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser", userID.Value.Trim());
+                    cmd.Parameters.AddWithValue("@UpdateUser", Request.ServerVariables.Get("AUTH_USER"));
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
@@ -551,8 +564,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
 
             }
-        }
 
+        }
 
         catch (OleDbException ex)
         {
@@ -591,7 +604,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             StringBuilder query = new StringBuilder(@"
                 SELECT 
-                    ID1,
                     EQP_ID,
                     PRODG_ID,
                     PRODUCT_GROUP,
@@ -602,7 +614,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     MEMO,
                     UPDATE_USER,
                     UPDATE_TIME,
-                    ACTIVE
+                    ACTIVE,
+                    ID1
                 FROM RTD.WET_BATCH_SIZE_CONTROL");
 
             // 加入篩選條件
@@ -714,14 +727,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         html.Append("<th style='width: 60px;'>啟用</th>");
         html.Append("<th style='width: 80px;'>操作</th>");
         html.Append("</tr></thead>");
-
         html.Append("<tbody>");
 
         for (int i = 0; i < dt.Rows.Count; i++)
         {
             DataRow row = dt.Rows[i];
             html.Append("<tr>");
-            html.Append("<td>" + (i + 1) + "</td>");
             html.Append("<td>" + row["EQP_ID"] + "</td>");
             html.Append("<td>" + row["PRODG_ID"] + "</td>");
             html.Append("<td>" + row["PRODUCT_GROUP"] + "</td>");
@@ -736,12 +747,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             // 啟用狀態
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
-            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick='updateActive(" + row["ID"] + ", this.checked)' />");
+            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick='updateActive(" + row["ID1"] + ", this.checked)' />");
             html.Append("</td>");
 
             // 操作按鈕
             html.Append("<td class='modify-cell'>");
-            html.Append("<button type='button' class='btn btn-custom btn-sm' onclick='deleteRecord(" + row["ID"] + ")'>刪除</button>");
+            html.Append("<button type='button' class='btn btn-custom btn-sm' onclick='deleteRecord(" + row["ID1"] + ")'>刪除</button>");
             html.Append("</td>");
 
             html.Append("</tr>");
