@@ -1,8 +1,9 @@
+
 <%@ Page Language="C#" AutoEventWireup="true" CodeFile="WetBatchSizeControl.aspx.cs" Inherits="WetBatchSizeControl"%>
 
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head runat="server">
+<head id="Head1" runat="server">
     <META http-equiv="Content-Type" content="text/html; charset=big5">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -527,7 +528,7 @@
                         </div>
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="submit" id="btn_add" runat="server" onserverclick="btnAdd_SeverClick" onclientclick="returnvalidateForm();" class="btn btn-custom">新增</button>
+                            <button type="submit" id="btn_add" runat="server" onserverclick="btnAdd_SeverClick" onclientclick="return validateForm();" class="btn btn-custom">新增</button>
                         </div>
                     </div>
                 
@@ -618,7 +619,7 @@
         </div>
     
     <!-- JavaScript 功能 -->
-    <script type="text/javascript" src="../script/jquery-3.7.0.min.js">
+    <script type="text/javascript" src="../script/jquery-3.7.0.min.js"></script>
     <script type="text/javascript">
         // jQuery 載入後執行
         $(document).ready(function() {
@@ -663,9 +664,8 @@
             var batchSize=document.getElementById('batch_size');
             if (!batchSize || batchSize.value == '') {
                 alert('請選擇Batch Size!');
-                if (batchSize) batchSize.focus() {
-                    return false;
-                }
+                if (batchSize) batchSize.focus();
+                return false;
             }
             return true;
         }
