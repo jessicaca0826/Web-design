@@ -1,8 +1,10 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="WetBatchSizeControl.aspx.cs" Inherits="WetBatchsizeControl"%>
+
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="WetBatchSizeControl.aspx.cs" Inherits="WetBatchSizeControl"%>
+
 <!DOCTYPE html>
 <html lang="zh-TW">
-<head runat="server">
-    <meta charset="UTF-8">
+<head id="Head1" runat="server">
+    <META http-equiv="Content-Type" content="text/html; charset=big5">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Wet Batchsize Control</title>
@@ -64,12 +66,12 @@
             border-radius: 4px;
             font-size: 16px; 
             
-            /*使用clearfix來清除浮動*/
-            overflow: hidden; /*觸發IE的hasLayout*/
+            /*雿輻牢learfix靘皜斗筑*/
+            overflow: hidden; /*閫貊嘹EhasLayout*/
             zoom: 1;
         }
         
-        /*為IE6/7添加 clearfix*/
+        /*截E6/7瘛餃 clearfix*/
         .section-header:before,
         .section-header:after {
             content: "";
@@ -80,24 +82,24 @@
             clear: both;
         }
         
-        /*僅針對.section-header下的h5進行樣式重置*/
+        /*撠.section-header銝h5脰璅撘蝵*/
         .section-header h5 {
-            float: left; /*左浮動*/
+            float: left; /*撌行筑*/
             margin: 0;
-            margin-right: 15px; /* 與右側內容保值間距 */
-            line-height: 32px; /* 與右側輸入框高度對齊 */
+            margin-right: 15px; /* 喳游批捆靽潮頝 */
+            line-height: 32px; /* 喳渲撓交擃摨血朣 */
             font-size: 16px;
             font-weight: bold;
         }
         
         .login-section {
             float: right;
-            vertical-align: middle; /*垂直對齊*/
+            vertical-align: middle; /*游朣*/
         }
         
         .login-section label,  
         .login-section input{
-            vertical-align: middle; /*垂直對齊*/
+            vertical-align: middle; /*游朣*/
             margin-right: 8px;
             display: inline-block;
         }
@@ -131,11 +133,11 @@
         .form-row {
             margin-bottom: 15px;
             font-size: 14px;
-            overflow: hidden; /*使用clearfix來清除浮動*/
-            zoom: 1; /*觸發IE的hasLayout*/
+            overflow: hidden; /*雿輻牢learfix靘皜斗筑*/
+            zoom: 1; /*閫貊嘹EhasLayout*/
         }
         
-        /*為IE6/7添加 clearfix*/
+        /*截E6/7瘛餃 clearfix*/
         .form-row:before,
         .form-row:after {
             content: "";
@@ -161,7 +163,7 @@
             color: #2c3e50;
             margin-right: 4px;
             white-space: nowrap;
-            vertical-align: middle; /* 垂直對齊 */
+            vertical-align: middle; /* 游朣 */
             font-size: 14px;
             display: block;
             margin-bottom: 3px;
@@ -186,7 +188,7 @@
             height: 28px;
         }
         
-        /*輸入框尺寸*/
+        /*頛詨交撠箏站*/
         .input-small { width: 80px; }
         .input-medium { width: 140px; }
         .input-large { width: 150px; }
@@ -265,13 +267,13 @@
             margin-right: 0;
         }
         
-        /* 控制各個元件的寬度 */
+        /* 批嗅隞嗥撖砍漲 */
         .filter-item:nth-child(1) {width: 80px;} /* Filter label */
-        .filter-item:nth-child(2) {width: 140px;} /* 欄位選擇 */
-        .filter-item:nth-child(3) {width: 140px;} /* 運算子選擇 */
-        .filter-item:nth-child(4) {width: 140px;} /* 條件值輸入 */
+        .filter-item:nth-child(2) {width: 140px;} /* 甈雿豢 */
+        .filter-item:nth-child(3) {width: 140px;} /* 蝞摮豢 */
+        .filter-item:nth-child(4) {width: 140px;} /* 璇隞嗅潸撓 */
         .filter-item:nth-child(5) {width: 80px;} /* AND/OR */
-        .filter-item:nth-child(6) {width: 80px;} /* 新增按鈕 */
+        .filter-item:nth-child(6) {width: 80px;} /* 啣 */
          
          .filter-conditions-display 
         {
@@ -294,7 +296,7 @@
             outline: none;
          }
          
-         /*篩選按扭區域*/
+         /*蝭拚豢剖*/
          .filter-buttons {
              text-align: right;
              margin-top: 5px;
@@ -331,11 +333,11 @@
         
         .remarks-text
         {
-            background-color: #f8f9fa; /*淺灰背景*/
-            color: #495057; /*深灰文字*/
-            cursor: default; /*默認鼠標樣式*/
-            overflow-y: auto; /*內容過多時可滑動*/
-            line-height: 1.5; /*行距*/
+            background-color: #f8f9fa; /*瘛箇啗*/
+            color: #495057; /*瘛梁唳摮*/
+            cursor: default; /*暺隤曌璅璅撘*/
+            overflow-y: auto; /*批捆憭舀*/
+            line-height: 1.5; /*銵頝*/
         }
         
         .table-custom {
@@ -384,14 +386,14 @@
             z-index: 2;
         }
         
-        /* 載入狀態 */
+        /* 頛亦 */
         .loading {
             text-align: center;
             padding: 20px;
             color: #666;
         }
         
-        /* 訊息樣式 */
+        /* 閮舀見撘 */
         .alert 
         {
             padding: 15px;
@@ -424,7 +426,12 @@
             border-color: #bce8f1;
         }           
         
-        /* IE 兼容性 */
+        /* IE 澆捆 */
+        .ie8 .form-control {
+            display: inline;
+            zoom: 1;
+        }
+        
         .ie8 .form-group,
         .ie9 .form-group {
             display: block;
@@ -450,25 +457,25 @@
     <form id="form1" runat="server">
         <div class="main-container">
             <div class="panel-custom main-content">
-                <!-- 標題區域 -->
+                <!-- 璅憿 -->
                 <div class="panel-primary">
                     <h1 class="panel-heading">WET BATCH SIZE CONTROL</h1>
                 </div>
             
                 <div class="panel-body">
-                    <!-- 狀態資訊 -->
+                    <!-- 鞈閮 -->
                     <div class="status-info">
-                        <span>最後更新時間: <span id="lastUpdateTime">2024-08-02 14:30:25</span></span> &nbsp;&nbsp;
-                        <span>最後上傳時間: <span id="lastUploadTime">2024-08-02 14:25:10</span></span> &nbsp;&nbsp;
-                        <span>網頁如有問題請call#6598</span>
+                        <span>敺湔唳: <span id="lastUpdateTime">2024-08-02 14:30:25</span></span> &nbsp;&nbsp;
+                        <span>敺銝單: <span id="lastUploadTime">2024-08-02 14:25:10</span></span> &nbsp;&nbsp;
+                        <span>蝬脤憒憿隢call#6598</span>
                     </div>
                 
-                    <!-- 訊息顯示區域 -->
+                    <!-- 閮舫＊蝷箏 -->
                     <asp:Panel id="pnlMessage" runat="server" visible="false" cssclass="alert">
                         <asp:Label id="lblMessage" runat="server"></asp:Label>
                     </asp:Panel>
 
-                    <!-- 新增設定區域 -->
+                    <!-- 啣閮剖 -->
                     <div class="section-header">
                         <h5>Add New Setting</h5>
                         <div class="login-section">
@@ -477,11 +484,11 @@
                             <label>Password:</label>
                             <input type="password" id="passward" runat="server" class="form-control">
                             <input type="checkbox" id="rememberMe" runat="server">
-                            <label for="rememberMe">記住密碼</label>
+                            <label for="rememberMe">閮雿撖蝣</label>
                         </div>
                     </div>
                 
-                    <!-- 表單區域 -->
+                    <!-- 銵典桀 -->
                     <div class="form-row">
                         <div class="form-group">
                             <label>EQP_ID</label>
@@ -506,14 +513,14 @@
                         <div class="form-group">
                             <label>BATCH_SIZE</label>
                             <select id="batch_size" runat="server" class="form-control form-control-sm input-small">
-                                <option value="">請選擇</option>
-                                <option value="1">單批</option>
-                                <option value="2">雙批</option>
+                                <option value="">隢豢</option>
+                                <option value="1">格</option>
+                                <option value="2"></option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>MIN_WAFER_COUNT</label>
-                            <input type="text" id="tbx_min_wafer_cnt" runat="server" class="form-control form-control-sm input-small" pattern="[0-9]*" title="請輸入數字">
+                            <input type="text" id="tbx_min_wafer_cnt" runat="server" class="form-control form-control-sm input-small" pattern="[0-9]*" title="隢頛詨交詨">
                         </div>
                         <div class="form-group">
                             <label>MEMO</label>
@@ -521,11 +528,11 @@
                         </div>
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="submit" id="btn_add" runat="server" onserverclick="btnAdd_SeverClick" class="btn btn-custom">新增</button>
+                            <button type="submit" id="btn_add" runat="server" onserverclick="btnAdd_SeverClick" onclientclick="return validateForm();" class="btn btn-custom">啣</button>
                         </div>
                     </div>
                 
-                    <!-- 篩選區域 -->
+                    <!-- 蝭拚詨 -->
                     <div class="filter-section-container">
                         <div class="filter-section">
                             <div class="filter-controls-row">
@@ -543,22 +550,22 @@
                                 </div>
                                 <div class="filter-item">
                                     <select id="filterOperator" runat="server" class="form-control form-control-sm input-medium">
-                                        <option value="=">等於</option>
-                                        <option value="!=">不等於</option>
-                                        <option value=">">大於</option>
-                                        <option value=">=">大於等於</option>
-                                        <option value="<">小於</option>
-                                        <option value="<=">小於等於</option>
-                                        <option value="like_start">開頭以</option>
-                                        <option value="like_end">結尾以</option>
-                                        <option value="not_like_start">不開頭以</option>
-                                        <option value="not_like_end">不結尾以</option>
-                                        <option value="like">包含</option>
-                                        <option value="not_like">不包含</option>
+                                        <option value="=">蝑</option>
+                                        <option value="!=">銝蝑</option>
+                                        <option value=">">憭扳</option>
+                                        <option value=">=">憭扳潛</option>
+                                        <option value="<">撠</option>
+                                        <option value="<=">撠潛</option>
+                                        <option value="like_start">凋誑</option>
+                                        <option value="like_end">蝯撠曆誑</option>
+                                        <option value="not_like_start">銝凋誑</option>
+                                        <option value="not_like_end">銝蝯撠曆誑</option>
+                                        <option value="like"></option>
+                                        <option value="not_like">銝</option>
                                     </select>
                                 </div>
                                 <div class="filter-item">
-                                    <input type="text" id="filterValue" runat="server" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
+                                    <input type="text" id="filterValue" runat="server" placeholder="頛詨交隞嗅" class="form-control form-control-sm input-medium">
                                 </div>
                                 <div class="filter-item">
                                     <select id="filterLogic" runat="server" class="form-control form-control-sm input-small">
@@ -567,47 +574,224 @@
                                     </select>
                                 </div>
                                 <div class="filter-item">
-                                    <button type="submit" id="btn_addFilter" class="btn btn-sucess btn-sm">新增篩選</button>
+                                    <button type="button" id="btn_addFilter" onclick="addFilterCondition();" class="btn btn-sucess btn-sm">啣蝭拚</button>
                                 </div>
                             </div>
                         
-                            <!--篩選條件顯示區域-->
+                            <!--蝭拚豢隞園＊蝷箏-->
                             <div class="filter-conditions-row">
-                                <textarea id="filterConditions" runat="server" class="filter-conditions-display" placeholder="篩選條件"></textarea>
+                                <textarea id="filterConditions" runat="server" class="filter-conditions-display" placeholder="蝭拚豢隞"></textarea>
                                 <div class="filter-buttons">
-                                    <button type="submit" id="btn_executeFilter" runat="server" onserverclick="btnExecuteFilter_ServerClick" class="btn btn-default btn-sm">執行篩選</button>
-                                    <button type="submit" id="btn_clearFilter" runat="server" onserverclick="btnClearFilter_ServerClick" class="btn btn-primary btn-sm">清除條件</button>
+                                    <button type="submit" id="btn_executeFilter" runat="server" onserverclick="btnExecuteFilter_ServerClick" class="btn btn-default btn-sm">瑁蝭拚</button>
+                                    <button type="submit" id="btn_clearFilter" runat="server" onserverclick="btnClearFilter_ServerClick" class="btn btn-primary btn-sm">皜斗隞</button>
                                 </div>
                             </div>
                         </div>
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
                                 <span style="color: Red; font-weight:bold">Remarks:</span><br>
-                                1. 歷史設定檔參考連結<br>
-                                2. 相關注意事項<br>
-                                3. 操作說明
+                                1. 甇瑕脰身摰瑼蝯<br>
+                                2. 賊瘜冽鈭<br>
+                                3. 雿隤芣
                             </div>
                         </div>
                     </div>
                 
-                    <!-- 目前設定區域 -->
+                    <!-- 桀閮剖 -->
                     <div class="section-header">Current Setting</div>
                 
                     <div class="table-responsive">
                         <div id="tableContainer" runat="server">
-                            <!-- 資料表內容由後端動態產生 -->
+                            <!-- 鞈銵典批捆勗蝡臬Ｙ -->
                         </div>
                     </div>
                 
-                    <!-- 操作說明 -->
+                    <!-- 雿隤芣 -->
                     <div class="alert alert-info" style="margin-top: 20px; font-size: 12px;">
-                    <strong>操作說明：</strong><br>
-                    1. 上方表單可新增設定，填寫完畢後點擊「新增」按鈕<br>
-                    2. 篩選區域可設定查詢條件，支援多重條件組合<br>
-                    3. 表格中可直接修改現有設定<br>
-                    4. 勾選「啟用」可控制設定是否生效
+                    <strong>雿隤芣嚗</strong><br>
+                    1. 銝寡”桀舀啣閮剖嚗憛怠神摰Ｗ暺啣<br>
+                    2. 蝭拚詨航身摰亥岷璇隞塚舀游璇隞嗥<br>
+                    3. 銵冽潔葉舐湔乩耨寧暹閮剖<br>
+                    4. 暸詻具舀批嗉身摰臬衣
                     </div>
                 </div>
             </div>
         </div>
+    
+    <!-- JavaScript  -->
+    <script type="text/javascript" src="../script/jquery-3.7.0.min.js"></script>
+    <script type="text/javascript">
+        // jQuery 頛亙瑁
+        $(document).ready(function() {
+            // 詨頛詨仿霅
+            $('#tbx_min_wafer_cnt').on('keypress',function(e) {
+                var charCode = (e.which) ? e.which : e.keyCode;
+                if (charCode > 31 && (charCode < 48 || charCode>57)) {
+                    return false;                
+                }
+                return true;
+            });
+
+            // 頛詨亥霅
+            $('#tbx_min_wafer_cnt').on('input propertypechange',function() {
+                var value=this.value;
+                this.value=value.replace(/[^0-9]/g, '');
+            });
+
+            // 銵冽潸 hover 
+            $('.table-custom tbody tr').hover(
+                function() {
+                    $(this).addClass('table-hover');
+                },
+                function() {
+                    $(this).removeClass('table-hover');
+                }
+            );
+        });
+
+        // 銵典桅霅賣
+        function validateForm() {
+            var required=['txb_eqpid', 'txb_prodgid', 'txb_prodgrp', 'txb_prodspecid', 'txb_openo'];
+            for (var i=0; i<required.length; i++) {
+                var field=document.getElementById(required[i]);
+                if (!field || field.value == '') {
+                    alert('隢憛怠神甈雿!');
+                    if (field) field.focus();
+                    return false;
+                }
+            }
+
+            var batchSize=document.getElementById('batch_size');
+            if (!batchSize || batchSize.value == '') {
+                alert('隢豢Batch Size!');
+                if (batchSize) batchSize.focus();
+                return false;
+            }
+            return true;
+        }
+
+        // 啣蝭拚豢隞嗅賣
+        function addFilterCondition() {
+            var field=document.getElementById('filterField').value;
+            var operator=document.getElementById('filterOperator').value;
+            var value=document.getElementById('filterValue').value;
+            var logic=document.getElementById('filterLogic').value;
+
+            // 駁文敺蝛箸
+            if (value.replace) {
+                value=value.replace(/^\s+|\s+$+/g,'');
+            }
+
+            if (value == '') {
+                alert('隢頛詨亦祟豢隞嗅!');
+                document.getElementById('filterValue').focus();
+                return;
+            }
+
+            // IE澆捆 PostBack
+            __doPostBack('AddFilter',field + '|' + operator + '|' + value + '|' + logic);
+        }
+
+        // 湔唳喳賣
+        function updateLastUpdateTime() {
+            var now = new Date();
+            var timeStr = now.getFullYear() + '-' + 
+                          padZero(now.getMonth()+1) + '-' + 
+                          padZero(now.getDate()) + ' ' +
+                          padZero(now.getHours()) + ':' +
+                          padZero(now.getMinutes()) + ':' +
+                          padZero(now.getSeconds());
+            var element = document.getElementById('lastUpdateTime');
+            if (element) {
+                if (element.textContent !== undefined) {
+                    element.textContent = timeStr;
+                }
+                else {
+                    element.innerText = timeStr;
+                }            
+            }
+        }
+
+        function padZero(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        // 銵冽潭雿
+        function updateActive(id, isActive) {
+            if (confirm('蝣箏閬霈湔迨閮剖函?')) {
+                __doPostBack('updateActive',id + '|' + isActive);
+            }
+        }
+
+        function deleteRecord(id) {
+            if (confirm('蝣箏閬芷斗迨蝑鞈?')) {
+                __doPostBack('DeleteRecord',id);
+            }
+        }
+
+        // 鈭隞嗥摰賣
+        function addEventHandler(element, eventType, handler) {
+            if (element.addEventListener) {
+                element.addEventListener(eventType,handler,false);
+            }
+            else if (element.attachEvent) {
+                element.attachEvent('on' + eventType, handler);
+            }
+        }
+
+        // Ｚ亙敺瑁
+        function pageLoad() {
+            // 箄”潭溶 hover  CSS
+            var style=document.createElement('style');
+            style.type='text/css';
+            var css='.table-hover {background-color:#f5f5f5 !important;}';
+
+            if (style.styleSheet) {
+                style.styleSheet.cssText=css;
+            }
+            else {
+                style.appendChild(document.createTextNode(css));
+            }
+
+            var head=document.getElementsByTagName('head')[0];
+            if (head) {
+                head.appendChild(style);
+            }
+
+            // 閮剖詨撽霅
+            var waferInput = document.getElementById('tbx_min_wafer_cnt');
+            if (waferInput) {
+                addEventHandler(waferInput,'keypress',function(e) {
+                    var charCode = (e.which) ? e.which : e.keyCode;
+                    if (charCode > 31 && (charCode < 48 || charCode>57)) {
+                        if (e.preventDefault) {
+                            e.preventDefault();
+                        }
+                        else {
+                            e.returnValue=false;
+                        }
+                        return false;
+                    }
+                    return true;
+                });
+            }
+        }
+
+        // DOMContentLoaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            pageLoad();
+        }
+        else if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded',pageLoad);
+        }
+        else if (document.attachEvent) {
+            document.attachEvent('onreadystatechange',function(){
+                 if (document.readyState === 'complete') {
+                    pageLoad();  
+                 }   
+            });
+        }
+        </script>
     </form>
+</body>
+</html>
