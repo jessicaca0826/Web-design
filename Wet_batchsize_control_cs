@@ -46,7 +46,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 每次載入都執行記住密碼功能
         LoadUserCredentials();
 
-        if (!IsPostBack)
+        RegisterClientScript();
+    if (!IsPostBack)
         {
             if (Session["Message"] != null)
             {
@@ -62,21 +63,21 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 更新篩選條件顯示
         UpdateFilterDisplay();
 
-        // 移除重複的 JavaScript 註冊，只保留必要的腳本
-        RegisterEssentialScript();
+        // 註冊客戶端腳本 (IE 兼容)
+        RegisterClientScript();
     }
 
     private void InitializePage()
     {
-        // 設定初始時間
+        // 設定初始時間 (IE 兼容寫法)
+        // need modify, 要抓RTD_TABLE_INFO值
+        //string timeScript = @"
+        //    if (document.getElementById('lastUpdateTime')) {
+        //        document.getElementById('lastUpdateTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
+        //    }";
         DataSet ds_temp = new DataSet();
         ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
-        string lastUpdateTime = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
-        
-        string timeScript = @"
-            if (document.getElementById('lastUpdateTime')) {
-                document.getElementById('lastUpdateTime').innerHTML = '" + lastUpdateTime + @"';
-            }";
+        string timeScript = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
         ClientScript.RegisterStartupScript(this.GetType(), "updateTime", timeScript, true);
     }
 
@@ -93,23 +94,113 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    private void RegisterEssentialScript()
+    private void RegisterClientScript()
     {
-        // 只註冊必要的腳本，避免重複定義
+        // 註冊 jQuery 相關腳本 (IE8+ 兼容)
         string script = @"
-            // 確保 __doPostBack 函數可用
-            if (typeof(__doPostBack) == 'undefined') {
-                function __doPostBack(eventTarget, eventArgument) {
-                    var form = document.forms[0];
-                    if (form) {
-                        form.__EVENTTARGET.value = eventTarget;
-                        form.__EVENTARGUMENT.value = eventArgument;
-                        form.submit();
+            <script type='text/javascript' src='../script/jquery-3.7.0.min.js'></script>
+            <script type='text/javascript'>
+            $(document).ready(function() {
+                // 數字輸入驗證 (IE 兼容)
+                $('#tbx_min_wafer_cnt').on('keypress', function(e) {
+                    var charCode = (e.which) ? e.which : e.keyCode;
+                    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // IE 兼容的輸入驗證
+                $('#tbx_min_wafer_cnt').on('input propertychange', function() {
+                    var value = this.value;
+                    this.value = value.replace(/[^0-9]/g, '');
+                });
+                
+                // 表格行 hover 效果 (IE 兼容)
+                $('.table-custom tbody tr').hover(
+                    function() { 
+                        $(this).addClass('table-hover'); 
+                    },
+                    function() { 
+                        $(this).removeClass('table-hover'); 
+                    }
+                );
+            });
+            
+            // 表單驗證 (IE 兼容)
+            function validateForm() {
+                var required = ['txb_eqpid', 'txb_prodgid', 'tbx_prodgrp', 'tbx_prodspecid', 'tbx_openo'];
+                for (var i = 0; i < required.length; i++) {
+                    var field = document.getElementById(required[i]);
+                    if (!field || field.value == '') {
+                        alert('請填寫所有必填欄位!');
+                        if (field) field.focus();
+                        return false;
                     }
                 }
-            }";
+                
+                var batchSize = document.getElementById('batch_size');
+                if (!batchSize || batchSize.value == '') {
+                    alert('請選擇 Batch Size!');
+                    if (batchSize) batchSize.focus();
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            // 新增篩選條件 (IE 兼容)
+            function addFilterCondition() {
+                var field = document.getElementById('filterField').value;
+                var operator = document.getElementById('filterOperator').value;
+                var value = document.getElementById('filterValue').value;
+                var logic = document.getElementById('filterLogic').value;
+                
+                if (value == '') {
+                    alert('請輸入篩選條件值!');
+                    document.getElementById('filterValue').focus();
+                    return;
+                }
+                
+                // IE 兼容的 PostBack
+                __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
+            }
+            
+            // 更新時間戳 (IE 兼容)
+            function updateLastUpdateTime() {
+                var now = new Date();
+                var timeStr = now.getFullYear() + '-' + 
+                             padZero(now.getMonth() + 1) + '-' + 
+                             padZero(now.getDate()) + ' ' + 
+                             padZero(now.getHours()) + ':' + 
+                             padZero(now.getMinutes()) + ':' + 
+                             padZero(now.getSeconds());
+                
+                var element = document.getElementById('lastUpdateTime');
+                if (element) {
+                    element.innerHTML = timeStr;
+                }
+            }
+            
+            function padZero(num) {
+                return num < 10 ? '0' + num : num;
+            }
+            
+            // 表格操作函數 (IE 兼容)
+            function updateActive(id, isActive) {
+                if (confirm('確定要變更此設定的啟用狀態嗎?')) {
+                    __doPostBack('UpdateActive', id + '|' + isActive);
+                }
+            }
+            
+            function deleteRecord(id) {
+                if (confirm('確定要刪除此筆資料嗎?此操作無法復原!')) {
+                    __doPostBack('DeleteRecord', id);
+                }
+            }
+            </script>";
 
-        ClientScript.RegisterStartupScript(this.GetType(), "EssentialScript", script, true);
+        ClientScript.RegisterStartupScript(this.GetType(), "InitScript", script, true);
     }
 
     protected void btnAdd_SeverClick(object sender, EventArgs e)
@@ -133,7 +224,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             // 新增資料到資料庫
             if (InsertBatchSizeSetting())
             {
-                // 用 Session 保存提示訊息
+                //ShowMessage("新增設定成功", "alert-success");
+                //ClearForm();
+                //LoadData(); // 重新載入資料
+                // 用TempData / Session保存提示訊息
                 Session["Message"] = "新增設定成功";
                 Session["MessageCss"] = "alert-success";
 
@@ -214,7 +308,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
 
-                // 清空輸入框
+                // 清空輸入框 (IE 兼容)
                 ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
             }
@@ -230,19 +324,17 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         try
         {
             string[] parts = data.Split('|');
-            string id;
+            int id;
             bool isActive;
 
-            if (parts.Length >= 2 && bool.TryParse(parts[1], out isActive))
+            if (parts.Length >= 2 && int.TryParse(parts[0], out id) && bool.TryParse(parts[1], out isActive))
             {
-                id = parts[0]; // ID1 作為字符串處理
-
                 using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
-                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = @Active, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID1 = @Id";
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@Active", isActive ? 1 : 0);
+                        cmd.Parameters.AddWithValue("@Active", isActive ? 1 : 0);  //Oracle的boolean轉換
                         cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
                         cmd.Parameters.AddWithValue("@Id", id);
 
@@ -272,27 +364,30 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         try
         {
-            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+            if (int.TryParse(idString, out id))
             {
-                // 軟刪除：將 ACTIVE 設為 false
-                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
-
-                using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                using (OleDbConnection conn = new OleDbConnection(ConnectionString))
                 {
-                    cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
-                    cmd.Parameters.AddWithValue("@Id", idString); // ID1 作為字符串處理
+                    // 軟刪除：將 ACTIVE 設為 false
+                    string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = @UpdateUser, UPDATE_TIME = SYSDATE WHERE ID1 = @Id";
 
-                    conn.Open();
-                    int result = cmd.ExecuteNonQuery();
+                    using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
+                        cmd.Parameters.AddWithValue("@Id", id);
 
-                    if (result > 0)
-                    {
-                        ShowMessage("記錄已成功刪除", "alert-success");
-                        LoadData();
-                    }
-                    else
-                    {
-                        ShowMessage("刪除失敗，找不到指定的記錄", "alert-warning");
+                        conn.Open();
+                        int result = cmd.ExecuteNonQuery();
+
+                        if (result > 0)
+                        {
+                            ShowMessage("記錄已成功刪除", "alert-success");
+                            LoadData();
+                        }
+                        else
+                        {
+                            ShowMessage("刪除失敗，找不到指定的記錄", "alert-warning");
+                        }
                     }
                 }
             }
@@ -338,7 +433,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    private bool ValidateUser()
+    private bool ValidateUser() //need modify
     {
         string userId = userID.Value != null ? userID.Value.Trim() : "";
         string password = passward.Value != null ? passward.Value.Trim() : "";
@@ -432,12 +527,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                // 修改 ID1 生成方式，使用時間戳和隨機數生成數字ID
                 string query = @"
                     INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
                     (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1)
                     VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, TO_NUMBER(TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') || TRUNC(DBMS_RANDOM.VALUE(100,999))))";
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, dbms_random.string('A', 16))";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -463,14 +557,20 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
+                    cmd.Parameters.AddWithValue("@UpdateUser", Request.ServerVariables.Get("AUTH_USER"));
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
                     return result > 0;
                 }
+
+                Response.Write(query);
+
+
             }
+
         }
+
         catch (OleDbException ex)
         {
             if (ex.ErrorCode == -2147467259) // 主鍵或唯一約束違反
@@ -489,7 +589,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             DataTable dt = GetBatchSizeData();
             GenerateDataTable(dt);
 
-            // 更新上傳時間
+            // 更新上傳時間 (IE 兼容)
             string timeScript = @"
                 if (document.getElementById('lastUploadTime')) {
                     document.getElementById('lastUploadTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
@@ -583,7 +683,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private string BuildWhereClause(FilterCondition condition, int index)
     {
-        string paramName = "?"; // OleDb 使用 ? 作為參數佔位符
+        string paramName = "@FilterValue" + index;
         string field = condition.Field;
 
         switch (condition.Operator)
@@ -636,8 +736,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         for (int i = 0; i < dt.Rows.Count; i++)
         {
             DataRow row = dt.Rows[i];
-            string idValue = row["ID1"].ToString();
-            
             html.Append("<tr>");
             html.Append("<td>" + row["EQP_ID"] + "</td>");
             html.Append("<td>" + row["PRODG_ID"] + "</td>");
@@ -650,15 +748,15 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             html.Append("<td>" + row["UPDATE_USER"] + "</td>");
             html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
 
-            // 啟用狀態 - 修正 ID 傳遞方式
+            // 啟用狀態
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
-            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick='updateActive(\"" + idValue + "\", this.checked)' />");
+            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick='updateActive(\"\" + " + row["ID1"] + " + \"\", this.checked)' />");
             html.Append("</td>");
 
-            // 操作按鈕 - 修正 ID 傳遞方式
+            // 操作按鈕
             html.Append("<td class='modify-cell'>");
-            html.Append("<button type='button' class='btn btn-custom btn-sm' onclick='deleteRecord(\"" + idValue + "\")'>刪除</button>");
+            html.Append("<button type='button' class='btn btn-custom btn-sm' onclick='deleteRecord(\"\" + " + row["ID1"] + " + \"\")'>刪除</button>");
             html.Append("</td>");
 
             html.Append("</tr>");
