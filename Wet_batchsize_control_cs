@@ -27,25 +27,19 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         get
         {
-            // 從Session中取得篩選條件，如果不存在則再建立新的
-            // 從Session["FilterConditions"]中讀取
             if (Session["FilterConditions"] == null)
                 Session["FilterConditions"] = new ArrayList();
             return (ArrayList)Session["FilterConditions"];
         }
         set
         {
-            // 將篩選條件儲存到Session["FilterConditions"]中
             Session["FilterConditions"] = value;
         }
     }
 
-
     protected void Page_Load(object sender, EventArgs e)
     {
-        
-    RegisterClientScript();
-// 每次載入都執行記住密碼功能
+        // 每次載入都執行記住密碼功能
         LoadUserCredentials();
 
         if (!IsPostBack)
@@ -64,27 +58,25 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 更新篩選條件顯示
         UpdateFilterDisplay();
 
-        // 註冊客戶端腳本 (IE 兼容)
+        // 註冊客戶端腳本
         RegisterClientScript();
     }
 
     private void InitializePage()
     {
-        // 設定初始時間 (IE 兼容寫法)
-        // need modify, 要抓RTD_TABLE_INFO值
-        //string timeScript = @"
-        //    if (document.getElementById('lastUpdateTime')) {
-        //        document.getElementById('lastUpdateTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
-        //    }";
         DataSet ds_temp = new DataSet();
         ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
-        string timeScript = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
+        string lastUpdateTime = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
+        
+        string timeScript = @"
+            if (document.getElementById('lastUpdateTime')) {
+                document.getElementById('lastUpdateTime').innerHTML = '" + lastUpdateTime + @"';
+            }";
         ClientScript.RegisterStartupScript(this.GetType(), "updateTime", timeScript, true);
     }
 
     private void LoadUserCredentials()
     {
-        // 從 Session 載入記住的使用者資訊
         if (Session["RememberUser"] != null && (bool)Session["RememberUser"])
         {
             if (Session["UserID"] != null)
@@ -95,131 +87,64 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    return true;
-                });
-                
-                // IE 兼容的輸入驗證
-                $('#tbx_min_wafer_cnt').on('input propertychange', function() {
-                    var value = this.value;
-                    this.value = value.replace(/[^0-9]/g, '');
-                });
-                
-                // 表格行 hover 效果 (IE 兼容)
-                $('.table-custom tbody tr').hover(
-                    function() { 
-                        $(this).addClass('table-hover'); 
-                    },
-                    function() { 
-                        $(this).removeClass('table-hover'); 
-                    }
-                );
-            });
-            
-            // 表單驗證 (IE 兼容)
-            function validateForm() {
-                var required = ['txb_eqpid', 'txb_prodgid', 'tbx_prodgrp', 'tbx_prodspecid', 'tbx_openo'];
-                for (var i = 0; i < required.length; i++) {
-                    var field = document.getElementById(required[i]);
-                    if (!field || field.value == '') {
-                        alert('請填寫所有必填欄位!');
-                        if (field) field.focus();
-                        return false;
-                    }
-                }
-                
-                var batchSize = document.getElementById('batch_size');
-                if (!batchSize || batchSize.value == '') {
-                    alert('請選擇 Batch Size!');
-                    if (batchSize) batchSize.focus();
-                    return false;
-                }
-                
-                return true;
-            }
-            
-            // 新增篩選條件 (IE 兼容)
-            function addFilterCondition() {
-                var field = document.getElementById('filterField').value;
-                var operator = document.getElementById('filterOperator').value;
-                var value = document.getElementById('filterValue').value;
-                var logic = document.getElementById('filterLogic').value;
-                
-                if (value == '') {
-                    alert('請輸入篩選條件值!');
-                    document.getElementById('filterValue').focus();
-                    return;
-                }
-                
-                // IE 兼容的 PostBack
-                __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
-            }
-            
-            // 更新時間戳 (IE 兼容)
-            function updateLastUpdateTime() {
-                var now = new Date();
-                var timeStr = now.getFullYear() + '-' + 
-                             padZero(now.getMonth() + 1) + '-' + 
-                             padZero(now.getDate()) + ' ' + 
-                             padZero(now.getHours()) + ':' + 
-                             padZero(now.getMinutes()) + ':' + 
-                             padZero(now.getSeconds());
-                
-                var element = document.getElementById('lastUpdateTime');
-                if (element) {
-                    element.innerHTML = timeStr;
-                }
-            }
-            
-            function padZero(num) {
-                return num < 10 ? '0' + num : num;
-            }
-            
-            // 表格操作函數 (IE 兼容)
-            function updateActive(id, isActive) {
-                if (confirm('確定要變更此設定的啟用狀態嗎?')) {
-                    __doPostBack('UpdateActive', id + '|' + isActive);
-                }
-            }
-            
-            function deleteRecord(id) {
-                if (confirm('確定要刪除此筆資料嗎?此操作無法復原!')) {
-                    __doPostBack('DeleteRecord', id);
-                }
-            }
-            </script>";
+    private void RegisterClientScript()
+    {
+        // 只註冊一次 jQuery
+        if (!Page.ClientScript.IsClientScriptIncludeRegistered("jquery"))
+        {
+            Page.ClientScript.RegisterClientScriptInclude(
+                "jquery",
+                ResolveUrl("~/script/jquery-3.7.0.min.js")
+            );
+        }
 
-        ClientScript.RegisterStartupScript(this.GetType(), "InitScript", script, true);
+        // 註冊全域函數供 ASP.NET PostBack 使用
+        string globalScript = @"
+            window.deleteRecord = function(id) {
+                if (typeof __doPostBack === 'function') {
+                    __doPostBack('DeleteRecord', id);
+                } else {
+                    console.warn('__doPostBack not available');
+                }
+            };
+            
+            window.updateActive = function(id, isChecked) {
+                var arg = id + '|' + (isChecked ? 'true' : 'false');
+                if (typeof __doPostBack === 'function') {
+                    __doPostBack('UpdateActive', arg);
+                } else {
+                    console.warn('__doPostBack not available');
+                }
+            };
+        ";
+
+        Page.ClientScript.RegisterStartupScript(
+            this.GetType(),
+            "GlobalFunctions",
+            globalScript,
+            true
+        );
     }
 
     protected void btnAdd_SeverClick(object sender, EventArgs e)
     {
         try
         {
-            // 表單驗證
             if (!ValidateForm())
                 return;
 
-            // 驗證使用者權限
             if (!ValidateUser())
             {
                 ShowMessage("使用者驗證失敗", "alert-danger");
                 return;
             }
 
-            // 儲存記住密碼設定到 Session
             SaveUserCredentials();
 
-            // 新增資料到資料庫
             if (InsertBatchSizeSetting())
             {
-                //ShowMessage("新增設定成功", "alert-success");
-                //ClearForm();
-                //LoadData(); // 重新載入資料
-                // 用TempData / Session保存提示訊息
                 Session["Message"] = "新增設定成功";
                 Session["MessageCss"] = "alert-success";
-
-                // Redirect避免表單重送
                 Response.Redirect(Request.RawUrl);
                 Context.ApplicationInstance.CompleteRequest();
             }
@@ -238,7 +163,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         try
         {
-            LoadData(); // 重新載入資料（會應用目前的篩選條件）
+            LoadData();
             ShowMessage("篩選執行完成，共 " + FilterConditions.Count + " 個條件", "alert-info");
         }
         catch (Exception ex)
@@ -253,7 +178,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             FilterConditions.Clear();
             filterConditions.Value = "";
-            LoadData(); // 重新載入所有資料
+            LoadData();
             ShowMessage("篩選條件已清除", "alert-info");
         }
         catch (Exception ex)
@@ -292,11 +217,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             if (parts.Length >= 4)
             {
                 FilterCondition condition = new FilterCondition(parts[0], parts[1], parts[2], parts[3]);
-
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
 
-                // 清空輸入框 (IE 兼容)
                 ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
             }
@@ -307,52 +230,39 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    
-private void UpdateActiveStatus(string data)
-{
-    try
+    private void UpdateActiveStatus(string data)
     {
-        string[] parts = data.Split('|');
-        if (parts.Length < 2)
+        try
         {
-            ShowMessage("更新狀態失敗：參數不足", "alert-danger");
-            return;
-        }
-        string id = parts[0];
-        bool isActive = parts[1].Equals("true", System.StringComparison.OrdinalIgnoreCase);
-
-        using (OleDbConnection conn = new OleDbConnection(ConnectionString))
-        {
-            string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
-            using (OleDbCommand cmd = new OleDbCommand(query, conn))
+            string[] parts = data.Split('|');
+            if (parts.Length < 2)
             {
-                cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
-                cmd.Parameters.AddWithValue("UPDATE_USER", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
-                cmd.Parameters.AddWithValue("ID1", id);
-
-                conn.Open();
-                int result = cmd.ExecuteNonQuery();
-                if (result > 0)
-                {
-                    ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
-                    LoadData();
-                }
-                else
-                {
-                    ShowMessage("更新失敗，找不到指定的記錄", "alert-warning");
-                }
+                ShowMessage("更新狀態失敗：參數不足", "alert-danger");
+                return;
             }
-        }
-    }
-    catch (Exception ex)
-    {
-        ShowMessage("更新狀態失敗: " + ex.Message, "alert-danger");
-    }
-}
-else
-                        {
-                            ShowMessage("更新失敗，找不到指定的記錄", "alert-warning");
-                        }
+            
+            string id = parts[0];
+            bool isActive = parts[1].Equals("true", System.StringComparison.OrdinalIgnoreCase);
+
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+            {
+                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
+                    cmd.Parameters.AddWithValue("UPDATE_USER", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
+                    cmd.Parameters.AddWithValue("ID1", id);
+
+                    conn.Open();
+                    int result = cmd.ExecuteNonQuery();
+                    if (result > 0)
+                    {
+                        ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
+                        LoadData();
+                    }
+                    else
+                    {
+                        ShowMessage("更新失敗，找不到指定的記錄", "alert-warning");
                     }
                 }
             }
@@ -363,43 +273,29 @@ else
         }
     }
 
-    
-private void DeleteRecord(string idString)
-{
-    try
+    private void DeleteRecord(string idString)
     {
-        using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+        try
         {
-            string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
-            using (OleDbCommand cmd = new OleDbCommand(query, conn))
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string updUser = !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System";
-                cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
-                cmd.Parameters.AddWithValue("ID1", idString);
+                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                {
+                    string updUser = !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System";
+                    cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
+                    cmd.Parameters.AddWithValue("ID1", idString);
 
-                conn.Open();
-                int result = cmd.ExecuteNonQuery();
-                if (result > 0)
-                {
-                    ShowMessage("記錄已成功刪除", "alert-success");
-                    LoadData();
-                }
-                else
-                {
-                    ShowMessage("刪除失敗，找不到指定的記錄", "alert-warning");
-                }
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        ShowMessage("刪除記錄失敗: " + ex.Message, "alert-danger");
-    }
-}
-else
-                        {
-                            ShowMessage("刪除失敗，找不到指定的記錄", "alert-warning");
-                        }
+                    conn.Open();
+                    int result = cmd.ExecuteNonQuery();
+                    if (result > 0)
+                    {
+                        ShowMessage("記錄已成功刪除", "alert-success");
+                        LoadData();
+                    }
+                    else
+                    {
+                        ShowMessage("刪除失敗，找不到指定的記錄", "alert-warning");
                     }
                 }
             }
@@ -445,7 +341,7 @@ else
         }
     }
 
-    private bool ValidateUser() //need modify
+    private bool ValidateUser()
     {
         string userId = userID.Value != null ? userID.Value.Trim() : "";
         string password = passward.Value != null ? passward.Value.Trim() : "";
@@ -455,18 +351,15 @@ else
 
         try
         {
-            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+            vCheckResult = RTD_ACCESS_CONTROL.Check_Authority(vFunctionName, userId, password);
+            if (vCheckResult == "Authentication Fail")
             {
-                vCheckResult = RTD_ACCESS_CONTROL.Check_Authority(vFunctionName, userId, password);
-                if (vCheckResult == "Authentication Fail")
-                {
-                    this.Session.Remove("Password");
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+                this.Session.Remove("Password");
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
         catch (Exception ex)
@@ -482,23 +375,17 @@ else
 
         if (string.IsNullOrEmpty(txb_eqpid.Value))
             errors.Add("EQP_ID 不能為空");
-
         if (string.IsNullOrEmpty(txb_prodgid.Value))
             errors.Add("PRODG_ID 不能為空");
-
         if (string.IsNullOrEmpty(tbx_prodgrp.Value))
             errors.Add("PRODUCT_GROUP 不能為空");
-
         if (string.IsNullOrEmpty(tbx_prodspecid.Value))
             errors.Add("PRODSPEC_ID 不能為空");
-
         if (string.IsNullOrEmpty(tbx_openo.Value))
             errors.Add("OPE_NO 不能為空");
-
         if (string.IsNullOrEmpty(batch_size.Value))
             errors.Add("BATCH_SIZE 必須選擇");
 
-        // 驗證數字欄位
         if (!string.IsNullOrEmpty(tbx_min_wafer_cnt.Value))
         {
             int waferCount;
@@ -526,7 +413,6 @@ else
         }
         else
         {
-            // 清除 Session
             Session.Remove("RememberUser");
             Session.Remove("UserID");
             Session.Remove("Password");
@@ -569,20 +455,14 @@ else
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser", Request.ServerVariables.Get("AUTH_USER"));
+                    cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
                     return result > 0;
                 }
-
-                Response.Write(query);
-
-
             }
-
         }
-
         catch (OleDbException ex)
         {
             if (ex.ErrorCode == -2147467259) // 主鍵或唯一約束違反
@@ -601,7 +481,6 @@ else
             DataTable dt = GetBatchSizeData();
             GenerateDataTable(dt);
 
-            // 更新上傳時間 (IE 兼容)
             string timeScript = @"
                 if (document.getElementById('lastUploadTime')) {
                     document.getElementById('lastUploadTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
@@ -620,21 +499,10 @@ else
         {
             StringBuilder query = new StringBuilder(@"
                 SELECT 
-                    EQP_ID,
-                    PRODG_ID,
-                    PRODUCT_GROUP,
-                    PRODSPEC_ID,
-                    OPE_NO,
-                    BATCH_SIZE,
-                    MIN_WAFER_COUNT,
-                    MEMO,
-                    UPDATE_USER,
-                    UPDATE_TIME,
-                    ACTIVE,
-                    ID1
+                    EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO,
+                    BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1
                 FROM RTD.WET_BATCH_SIZE_CONTROL");
 
-            // 加入篩選條件
             if (FilterConditions.Count > 0)
             {
                 query.Append(" WHERE ");
@@ -643,16 +511,14 @@ else
                     FilterCondition condition = (FilterCondition)FilterConditions[i];
                     if (i > 0)
                         query.Append(" " + condition.Logic + " ");
-
                     query.Append(BuildWhereClause(condition, i));
                 }
             }
 
-            query.Append(" ORDER BY UPDATE_TIME DESC ");
+            query.Append(" ORDER BY UPDATE_TIME DESC");
 
             using (OleDbCommand cmd = new OleDbCommand(query.ToString(), conn))
             {
-                // 加入參數
                 for (int i = 0; i < FilterConditions.Count; i++)
                 {
                     FilterCondition condition = (FilterCondition)FilterConditions[i];
@@ -708,15 +574,11 @@ else
             case "<=":
                 return field + " " + condition.Operator + " " + paramName;
             case "like_start":
-                return field + " LIKE " + paramName;
             case "like_end":
-                return field + " LIKE " + paramName;
-            case "not_like_start":
-                return field + " NOT LIKE " + paramName;
-            case "not_like_end":
-                return field + " NOT LIKE " + paramName;
             case "like":
                 return field + " LIKE " + paramName;
+            case "not_like_start":
+            case "not_like_end":
             case "not_like":
                 return field + " NOT LIKE " + paramName;
             default:
@@ -727,7 +589,6 @@ else
     private void GenerateDataTable(DataTable dt)
     {
         StringBuilder html = new StringBuilder();
-
         html.Append("<table class='table-custom'>");
         html.Append("<thead><tr>");
         html.Append("<th style='width: 80px;'>EQP_ID</th>");
@@ -760,22 +621,20 @@ else
             html.Append("<td>" + row["UPDATE_USER"] + "</td>");
             html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
 
-            // 啟用狀態
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
-            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + " onclick="updateActive(' + row["ID1"] + ", this.checked)' />");
+            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + 
+                       " onclick=\"updateActive('" + row["ID1"] + "', this.checked)\" />");
             html.Append("</td>");
 
-            // 操作按鈕
             html.Append("<td class='modify-cell'>");
-            html.Append("<button type='button' class='btn btn-custom btn-sm' onclick="deleteRecord(' + row["ID1"] + ")'>刪除</button>");
+            html.Append("<button type='button' class='btn btn-custom btn-sm' " +
+                       "onclick=\"deleteRecord('" + row["ID1"] + "')\">刪除</button>");
             html.Append("</td>");
-
             html.Append("</tr>");
         }
 
-        html.Append("</tbody>");
-        html.Append("</table>");
+        html.Append("</tbody></table>");
 
         if (dt.Rows.Count == 0)
         {
@@ -817,7 +676,6 @@ else
         pnlMessage.CssClass = "alert " + cssClass;
         lblMessage.Text = message;
 
-        // IE 兼容的自動隱藏訊息
         string script = @"
             setTimeout(function() {
                 var panel = document.getElementById('" + pnlMessage.ClientID + @"');
@@ -836,7 +694,6 @@ else
         public string Value { get; set; }
         public string Logic { get; set; }
 
-        // 建構函數
         public FilterCondition()
         {
             Field = "";
@@ -845,7 +702,6 @@ else
             Logic = "";
         }
 
-        // 帶參數的建構函式
         public FilterCondition(string field, string op, string value, string logic)
         {
             Field = field ?? "";
@@ -855,45 +711,3 @@ else
         }
     }
 }
-
-private void RegisterClientScript()
-{
-    // 1) Load external jQuery exactly once
-    if (!Page.ClientScript.IsClientScriptIncludeRegistered("jquery"))
-    {
-        Page.ClientScript.RegisterClientScriptInclude(
-            "jquery",
-            ResolveUrl("~/script/jquery-3.7.0.min.js")
-        );
-    }
-
-    // 2) Inline JS (no <script> tags here)
-    string inlineScript = @"
-        window.deleteRecord = function(id) {
-            if (typeof __doPostBack === 'function') {
-                __doPostBack('DeleteRecord', id);
-            } else {
-                console.warn('__doPostBack not available; are you on a static HTML file?');
-            }
-        };
-        window.updateActive = function(id, isChecked) {
-            var arg = id + '|' + (isChecked ? 'true' : 'false');
-            if (typeof __doPostBack === 'function') {
-                __doPostBack('UpdateActive', arg);
-            } else {
-                console.warn('__doPostBack not available; are you on a static HTML file?');
-            }
-        };
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page initialized');
-        });
-    ";
-
-    Page.ClientScript.RegisterStartupScript(
-        this.GetType(),
-        "InitScript",
-        inlineScript,
-        true // auto-wrap with <script>
-    );
-}
-
