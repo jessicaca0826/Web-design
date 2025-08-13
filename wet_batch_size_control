@@ -1,3 +1,4 @@
+
 <%@ Page Language="C#" AutoEventWireup="true" CodeFile="WetBatchSizeControl.aspx.cs" Inherits="WetBatchSizeControl"%>
 
 <!DOCTYPE html>
@@ -392,7 +393,7 @@
             color: #666;
         }
         
-        /* 訊息樣式 */
+        /* 響應式調整 */
         .alert 
         {
             padding: 15px;
@@ -589,8 +590,8 @@
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
                                 <span style="color: Red; font-weight:bold">Remarks:</span><br>
-                                1. 歷史設定檔參考連結<br>
-                                2. 相關注意事項<br>
+                                1. 歷史設定連結<br>
+                                2. 注意事項<br>
                                 3. 操作說明
                             </div>
                         </div>
@@ -607,7 +608,7 @@
                 
                     <!-- 操作說明 -->
                     <div class="alert alert-info" style="margin-top: 20px; font-size: 12px;">
-                    <strong>操作說明：</strong><br>
+                    <strong>操作說明</strong><br>
                     1. 上方表單可新增設定，填寫完畢後點擊「新增」按鈕<br>
                     2. 篩選區域可設定查詢條件，支援多重條件組合<br>
                     3. 表格中可直接修改現有設定<br>
@@ -617,32 +618,32 @@
             </div>
         </div>
     
-    <!-- JavaScript 功能 -->
+    <!-- JavaScript  -->
     <script type="text/javascript" src="../script/jquery-3.7.0.min.js"></script>
     <script type="text/javascript">
         // jQuery 載入後執行
-        $(document).ready(function() {
+        $(document).ready(function () {
             // 數字輸入驗證
-            $('#tbx_min_wafer_cnt').on('keypress',function(e) {
+            $('#tbx_min_wafer_cnt').on('keypress', function (e) {
                 var charCode = (e.which) ? e.which : e.keyCode;
-                if (charCode > 31 && (charCode < 48 || charCode>57)) {
-                    return false;                
+                if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    return false;
                 }
                 return true;
             });
 
             // 輸入認證
-            $('#tbx_min_wafer_cnt').on('input propertychange',function() {
-                var value=this.value;
-                this.value=value.replace(/[^0-9]/g, '');
+            $('#tbx_min_wafer_cnt').on('input propertypechange', function () {
+                var value = this.value;
+                this.value = value.replace(/[^0-9]/g, '');
             });
 
-            // 表格行 hover 效果
+            // 表格行 hover 效果 
             $('.table-custom tbody tr').hover(
-                function() {
+                function () {
                     $(this).addClass('table-hover');
                 },
-                function() {
+                function () {
                     $(this).removeClass('table-hover');
                 }
             );
@@ -650,9 +651,9 @@
 
         // 表單驗證函數
         function validateForm() {
-            var required=['txb_eqpid', 'txb_prodgid', 'tbx_prodgrp', 'tbx_prodspecid', 'tbx_openo'];
-            for (var i=0; i<required.length; i++) {
-                var field=document.getElementById(required[i]);
+            var required = ['txb_eqpid', 'txb_prodgid', 'txb_prodgrp', 'txb_prodspecid', 'txb_openo'];
+            for (var i = 0; i < required.length; i++) {
+                var field = document.getElementById(required[i]);
                 if (!field || field.value == '') {
                     alert('請填寫所有欄位!');
                     if (field) field.focus();
@@ -660,7 +661,7 @@
                 }
             }
 
-            var batchSize=document.getElementById('batch_size');
+            var batchSize = document.getElementById('batch_size');
             if (!batchSize || batchSize.value == '') {
                 alert('請選擇Batch Size!');
                 if (batchSize) batchSize.focus();
@@ -671,34 +672,31 @@
 
         // 新增篩選條件函數
         function addFilterCondition() {
-            var field=document.getElementById('filterField').value;
-            var operator=document.getElementById('filterOperator').value;
-            var value=document.getElementById('filterValue').value;
-            var logic=document.getElementById('filterLogic').value;
+            var field = document.getElementById('filterField').value;
+            var operator = document.getElementById('filterOperator').value;
+            var value = document.getElementById('filterValue').value;
+            var logic = document.getElementById('filterLogic').value;
 
             // 去除前後空格
-            if (value && value.replace) {
-                value=value.replace(/^\s+|\s+$/g,'');
+            if (value.replace) {
+                value = value.replace(/^\s+|\s+$/g, '');
             }
 
-            if (!value || value == '') {
+            if (value == '') {
                 alert('請輸入篩選條件值!');
-                var filterValueElement = document.getElementById('filterValue');
-                if (filterValueElement) {
-                    filterValueElement.focus();
-                }
+                document.getElementById('filterValue').focus();
                 return;
             }
 
             // IE兼容的 PostBack
-            __doPostBack('AddFilter',field + '|' + operator + '|' + value + '|' + logic);
+            __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
         }
 
         // 更新時間戳函數
         function updateLastUpdateTime() {
             var now = new Date();
-            var timeStr = now.getFullYear() + '-' + 
-                          padZero(now.getMonth()+1) + '-' + 
+            var timeStr = now.getFullYear() + '-' +
+                          padZero(now.getMonth() + 1) + '-' +
                           padZero(now.getDate()) + ' ' +
                           padZero(now.getHours()) + ':' +
                           padZero(now.getMinutes()) + ':' +
@@ -710,7 +708,7 @@
                 }
                 else {
                     element.innerText = timeStr;
-                }            
+                }
             }
         }
 
@@ -718,10 +716,10 @@
             return num < 10 ? '0' + num : num;
         }
 
-        // 表格操作 - 修正ID參數傳遞
+        // 表格操作
         function updateActive(id, isActive) {
-            if (confirm('確定要變更此設定的啟用狀態嗎?')) {
-                __doPostBack('UpdateActive', id + '|' + isActive);
+            if (confirm('確定要變更此設定的啟用狀態?')) {
+                __doPostBack('updateActive', id + '|' + isActive);
             }
         }
 
@@ -731,10 +729,10 @@
             }
         }
 
-        // 事件綁定函數
+        // 事件規定函數
         function addEventHandler(element, eventType, handler) {
             if (element.addEventListener) {
-                element.addEventListener(eventType,handler,false);
+                element.addEventListener(eventType, handler, false);
             }
             else if (element.attachEvent) {
                 element.attachEvent('on' + eventType, handler);
@@ -744,18 +742,18 @@
         // 頁面載入完成後執行
         function pageLoad() {
             // 為表格添加 hover 效果的 CSS
-            var style=document.createElement('style');
-            style.type='text/css';
-            var css='.table-hover {background-color:#f5f5f5 !important;}';
+            var style = document.createElement('style');
+            style.type = 'text/css';
+            var css = '.table-hover {background-color:#f5f5f5 !important;}';
 
             if (style.styleSheet) {
-                style.styleSheet.cssText=css;
+                style.styleSheet.cssText = css;
             }
             else {
                 style.appendChild(document.createTextNode(css));
             }
 
-            var head=document.getElementsByTagName('head')[0]; // 修正拼寫錯誤
+            var head = document.getElementsByTagName('head')[0];
             if (head) {
                 head.appendChild(style);
             }
@@ -763,14 +761,14 @@
             // 設定數字驗證
             var waferInput = document.getElementById('tbx_min_wafer_cnt');
             if (waferInput) {
-                addEventHandler(waferInput,'keypress',function(e) {
+                addEventHandler(waferInput, 'keypress', function (e) {
                     var charCode = (e.which) ? e.which : e.keyCode;
-                    if (charCode > 31 && (charCode < 48 || charCode>57)) {
+                    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
                         if (e.preventDefault) {
                             e.preventDefault();
                         }
                         else {
-                            e.returnValue=false;
+                            e.returnValue = false;
                         }
                         return false;
                     }
@@ -784,13 +782,13 @@
             pageLoad();
         }
         else if (document.addEventListener) {
-            document.addEventListener('DOMContentLoaded',pageLoad);
+            document.addEventListener('DOMContentLoaded', pageLoad);
         }
         else if (document.attachEvent) {
-            document.attachEvent('onreadystatechange',function(){
-                 if (document.readyState === 'complete') {
-                    pageLoad();  
-                 }   
+            document.attachEvent('onreadystatechange', function () {
+                if (document.readyState === 'complete') {
+                    pageLoad();
+                }
             });
         }
         </script>
