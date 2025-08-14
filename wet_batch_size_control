@@ -577,7 +577,7 @@
                                     </select>
                                 </div>
                                 <div class="filter-item">
-                                    <button type="button" id="btn_addFilter" onclick="addFilterCondition();" class="btn btn-sucess btn-sm">新增篩選</button>
+                                    <button type="button" id="btn_addFilter" onclick="btnAddFilter_Click" runat="server" class="btn btn-sucess btn-sm">新增篩選</button>
                                 </div>
                             </div>
                         
@@ -625,28 +625,28 @@
     <script type="text/javascript" src="../script/jquery-3.7.0.min.js"></script>
     <script type="text/javascript">
         // jQuery 載入後執行
-        $(document).ready(function() {
+        $(document).ready(function () {
             // 數字輸入驗證
-            $('#tbx_min_wafer_cnt').on('keypress', function(e) {
+            $('#tbx_min_wafer_cnt').on('keypress', function (e) {
                 var charCode = (e.which) ? e.which : e.keyCode;
                 if (charCode > 31 && (charCode < 48 || charCode > 57)) {
-                    return false;                
+                    return false;
                 }
                 return true;
             });
 
             // IE 兼容的輸入驗證
-            $('#tbx_min_wafer_cnt').on('input propertychange', function() {
+            $('#tbx_min_wafer_cnt').on('input propertychange', function () {
                 var value = this.value;
                 this.value = value.replace(/[^0-9]/g, '');
             });
 
             // 表格行 hover 效果
             $('.table-custom tbody tr').hover(
-                function() {
+                function () {
                     $(this).addClass('table-hover');
                 },
-                function() {
+                function () {
                     $(this).removeClass('table-hover');
                 }
             );
@@ -682,7 +682,7 @@
 
             // 去除前後空格
             if (value.replace) {
-                value = value.replace(/^\s+|\s+$+/g,'');
+                value = value.replace(/^\s+|\s+$/g, '');
             }
 
             if (value == '') {
@@ -691,15 +691,15 @@
                 return;
             }
 
-            // IE兼容的 PostBack
+             IE兼容的 PostBack
             __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
         }
 
         // 更新時間戳函數
         function updateLastUpdateTime() {
             var now = new Date();
-            var timeStr = now.getFullYear() + '-' + 
-                          padZero(now.getMonth()+1) + '-' + 
+            var timeStr = now.getFullYear() + '-' +
+                          padZero(now.getMonth() + 1) + '-' +
                           padZero(now.getDate()) + ' ' +
                           padZero(now.getHours()) + ':' +
                           padZero(now.getMinutes()) + ':' +
@@ -711,7 +711,7 @@
                 }
                 else {
                     element.innerText = timeStr;
-                }            
+                }
             }
         }
 
@@ -747,7 +747,7 @@
             // 設定數字驗證
             var waferInput = document.getElementById('tbx_min_wafer_cnt');
             if (waferInput) {
-                addEventHandler(waferInput, 'keypress', function(e) {
+                addEventHandler(waferInput, 'keypress', function (e) {
                     var charCode = (e.which) ? e.which : e.keyCode;
                     if (charCode > 31 && (charCode < 48 || charCode > 57)) {
                         if (e.preventDefault) {
@@ -771,10 +771,10 @@
             document.addEventListener('DOMContentLoaded', pageLoad);
         }
         else if (document.attachEvent) {
-            document.attachEvent('onreadystatechange', function(){
-                 if (document.readyState === 'complete') {
-                    pageLoad();  
-                 }   
+            document.attachEvent('onreadystatechange', function () {
+                if (document.readyState === 'complete') {
+                    pageLoad();
+                }
             });
         }
     </script>
