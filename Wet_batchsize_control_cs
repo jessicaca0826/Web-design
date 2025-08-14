@@ -189,25 +189,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    protected void btnAddFilter_Click(object sender, EventArgs e)
-    {
-        string field = filterField.Value;
-        string Operator = filterOperator.Value;
-        string value = filterValue.Value;
-        string logic =filterLogic.Value;
-        
-        value=value.Trim();
-
-        if (value == "") {
-             ShowMessage("請輸入篩選條件值!", "alert-info");
-        }
-
-        AddFilterCondition(field + '|' + Operator + '|' + value + '|' + logic);
-    }
-
-
-
-
     protected void btnExecuteFilter_ServerClick(object sender, EventArgs e)
     {
         try
@@ -260,8 +241,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private void AddFilterCondition(string conditionData)
     {
+        // 驗證輸入值
         if (string.IsNullOrEmpty(conditionData))
         {
+            ShowMessage("篩選條件資料為空!","alert-warning");
             return;
         }
         
@@ -270,12 +253,29 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             string[] parts = conditionData.Split('|');
             if (parts.Length >= 4)
             {
+                // 驗證條件值不為空
+                string value = parts[2] != null ? parts[2].Trim() : "";
+                
+                if (string.IsNullOrEmpty(value)) {
+                    ShowMessage("請輸入篩選條件值!", "alert-warning");
+                    return;
+                }
+                
                 FilterCondition condition = new FilterCondition(parts[0], parts[1], parts[2], parts[3]);
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
 
+                // 重新載入資料
+                LoadData();
+
                 ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
+
+                ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorDisplayText(parts[1]) + " '" + value + "'", "alert-success");
+            }
+
+            else {
+                ShowMessage("篩選條件格式不正確!", "alert-danger");
             }
         }
         catch (Exception ex)
@@ -385,19 +385,19 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         switch (op)
         {
-            case "=": return "等於";
-            case "!=": return "不等於";
-            case ">": return "大於";
-            case ">=": return "大於等於";
-            case "<": return "小於";
-            case "<=": return "小於等於";
-            case "like_start": return "開頭以";
-            case "like_end": return "結尾以";
-            case "not_like_start": return "不開頭以";
-            case "not_like_end": return "不結尾以";
-            case "like": return "包含";
-            case "not_like": return "不包含";
-            default: return op;
+            case "=": return "=";
+            case "!=": return "!=";
+            case ">": return ">";
+            case ">=": return ">=";
+            case "<": return "<";
+            case "<=": return "<=";
+            case "like_start": return "LIKE";
+            case "like_end": return "LIKE";
+            case "not_like_start": return "NOT LIKE";
+            case "not_like_end": return "NOT LIKE";
+            case "like": return "LIKE";
+            case "not_like": return "NOT LIKE";
+            default: return "=";
         }
     }
 
