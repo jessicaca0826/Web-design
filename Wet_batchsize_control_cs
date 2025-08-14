@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections;
 using System.Data;
@@ -13,6 +14,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Net.Cache;
 using System.Diagnostics.Eventing.Reader;
 using System.Runtime.Remoting.Contexts;
+using System.Collections.Specialized;
 
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
@@ -39,8 +41,42 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        
         // 每次載入都執行記住密碼功能
         LoadUserCredentials();
+
+        // 每次都註冊JS，避免事件遺失
+        RegisterClientScript();
+
+        // 更新篩選條件顯示
+        UpdateFilterDisplay();
+
+        if (IsPostBack) { 
+            
+            string target = Request["__EVENTTARGET"] ?? "";
+            string arg = Request["__EVENTARGUMENT"] ?? "";
+
+            if (target == "DeleteRecord") {
+                System.Diagnostics.Debug.WriteLine("PostBack => DeleteRecord, arg=" + arg);
+                Page.ClientScript.RegisterStartupScript(this.GetType(),"debugDeleteRecord",string.Format("console.log('後端已執行 DeleteRecord，ID1={0}');",arg),true);
+                DeleteRecord(arg);
+                return;
+            }
+            else if (target == "UpdateActive")
+            {
+                System.Diagnostics.Debug.WriteLine("PostBack => UpdateActive, arg=" + arg);
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugUpdateActive",string.Format("console.log('後端已執行 UpdateActiveStatus，ID1={0}');",arg), true);
+                UpdateActiveStatus(arg);
+                return;
+            }
+            else if (target == "AddFilter")
+            {
+                System.Diagnostics.Debug.WriteLine("PostBack => AddFilter, arg=" + arg);
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugAddFilter", string.Format("console.log('後端已執行 AddFilterCondition，arg={0}');", arg), true);
+                AddFilterCondition(arg);
+                return;
+            }
+        }
 
         if (!IsPostBack)
         {
@@ -50,16 +86,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 Session.Remove("Message");
                 Session.Remove("MessageCss");
             }
-
             InitializePage();
             LoadData();
         }
 
-        // 更新篩選條件顯示
-        UpdateFilterDisplay();
-
-        // 註冊客戶端腳本
-        RegisterClientScript();
     }
 
     private void InitializePage()
@@ -67,7 +97,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         DataSet ds_temp = new DataSet();
         ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
         string lastUpdateTime = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
-        
+
         string timeScript = @"
             if (document.getElementById('lastUpdateTime')) {
                 document.getElementById('lastUpdateTime').innerHTML = '" + lastUpdateTime + @"';
@@ -159,6 +189,25 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
+    protected void btnAddFilter_Click(object sender, EventArgs e)
+    {
+        string field = filterField.Value;
+        string Operator = filterOperator.Value;
+        string value = filterValue.Value;
+        string logic =filterLogic.Value;
+        
+        value=value.Trim();
+
+        if (value == "") {
+             ShowMessage("請輸入篩選條件值!", "alert-info");
+        }
+
+        AddFilterCondition(field + '|' + Operator + '|' + value + '|' + logic);
+    }
+
+
+
+
     protected void btnExecuteFilter_ServerClick(object sender, EventArgs e)
     {
         try
@@ -195,11 +244,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             AddFilterCondition(eventArgument);
         }
-        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget.Contains("UpdateActive"))
+        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget == "UpdateActive")
         {
             UpdateActiveStatus(eventArgument);
         }
-        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget.Contains("DeleteRecord"))
+        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget=="DeleteRecord")
         {
             DeleteRecord(eventArgument);
         }
@@ -211,6 +260,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private void AddFilterCondition(string conditionData)
     {
+        if (string.IsNullOrEmpty(conditionData))
+        {
+            return;
+        }
+        
         try
         {
             string[] parts = conditionData.Split('|');
@@ -240,7 +294,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 ShowMessage("更新狀態失敗：參數不足", "alert-danger");
                 return;
             }
-            
+
             string id = parts[0];
             bool isActive = parts[1].Equals("true", System.StringComparison.OrdinalIgnoreCase);
 
@@ -250,7 +304,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
-                    cmd.Parameters.AddWithValue("UPDATE_USER", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
+                    cmd.Parameters.AddWithValue("UPDATE_USER",Request.ServerVariables.Get("AUTH_USER"));
                     cmd.Parameters.AddWithValue("ID1", id);
 
                     conn.Open();
@@ -280,9 +334,15 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
                 string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                
+                // debug
+                //System.Diagnostics.Debug.WriteLine("===DeleteRecord() called ===");
+                //System.Diagnostics.Debug.WriteLine("SQL:"+query);
+                //System.Diagnostics.Debug.WriteLine("Parameters: ID1=" + idString);
+
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
-                    string updUser = !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System";
+                    string updUser = Request.ServerVariables.Get("AUTH_USER");
                     cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
                     cmd.Parameters.AddWithValue("ID1", idString);
 
@@ -455,7 +515,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser", !string.IsNullOrEmpty(userID.Value) ? userID.Value.Trim() : "System");
+                    cmd.Parameters.AddWithValue("@UpdateUser",Request.ServerVariables.Get("AUTH_USER"));
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
@@ -623,7 +683,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
-            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") + 
+            html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") +
                        " onclick=\"updateActive('" + row["ID1"] + "', this.checked)\" />");
             html.Append("</td>");
 
