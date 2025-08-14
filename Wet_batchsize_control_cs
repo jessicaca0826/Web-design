@@ -41,7 +41,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        
+
         // 每次載入都執行記住密碼功能
         LoadUserCredentials();
 
@@ -51,21 +51,23 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 更新篩選條件顯示
         UpdateFilterDisplay();
 
-        if (IsPostBack) { 
-            
+        if (IsPostBack)
+        {
+
             string target = Request["__EVENTTARGET"] ?? "";
             string arg = Request["__EVENTARGUMENT"] ?? "";
 
-            if (target == "DeleteRecord") {
+            if (target == "DeleteRecord")
+            {
                 System.Diagnostics.Debug.WriteLine("PostBack => DeleteRecord, arg=" + arg);
-                Page.ClientScript.RegisterStartupScript(this.GetType(),"debugDeleteRecord",string.Format("console.log('後端已執行 DeleteRecord，ID1={0}');",arg),true);
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugDeleteRecord", string.Format("console.log('後端已執行 DeleteRecord，ID1={0}');", arg), true);
                 DeleteRecord(arg);
                 return;
             }
             else if (target == "UpdateActive")
             {
                 System.Diagnostics.Debug.WriteLine("PostBack => UpdateActive, arg=" + arg);
-                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugUpdateActive",string.Format("console.log('後端已執行 UpdateActiveStatus，ID1={0}');",arg), true);
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugUpdateActive", string.Format("console.log('後端已執行 UpdateActiveStatus，ID1={0}');", arg), true);
                 UpdateActiveStatus(arg);
                 return;
             }
@@ -229,7 +231,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             UpdateActiveStatus(eventArgument);
         }
-        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget=="DeleteRecord")
+        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget == "DeleteRecord")
         {
             DeleteRecord(eventArgument);
         }
@@ -244,10 +246,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 驗證輸入值
         if (string.IsNullOrEmpty(conditionData))
         {
-            ShowMessage("篩選條件資料為空!","alert-warning");
+            ShowMessage("篩選條件資料為空!", "alert-warning");
             return;
         }
-        
+
         try
         {
             string[] parts = conditionData.Split('|');
@@ -255,12 +257,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             {
                 // 驗證條件值不為空
                 string value = parts[2] != null ? parts[2].Trim() : "";
-                
-                if (string.IsNullOrEmpty(value)) {
+
+                if (string.IsNullOrEmpty(value))
+                {
                     ShowMessage("請輸入篩選條件值!", "alert-warning");
                     return;
                 }
-                
+
                 FilterCondition condition = new FilterCondition(parts[0], parts[1], parts[2], parts[3]);
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
@@ -271,10 +274,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
 
-                ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorDisplayText(parts[1]) + " '" + value + "'", "alert-success");
+                //ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorDisplayText(parts[1]) + " '" + value + "'", "alert-success");
             }
 
-            else {
+            else
+            {
                 ShowMessage("篩選條件格式不正確!", "alert-danger");
             }
         }
@@ -304,7 +308,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
-                    cmd.Parameters.AddWithValue("UPDATE_USER",Request.ServerVariables.Get("AUTH_USER"));
+                    cmd.Parameters.AddWithValue("UPDATE_USER", Request.ServerVariables.Get("AUTH_USER"));
                     cmd.Parameters.AddWithValue("ID1", id);
 
                     conn.Open();
@@ -334,7 +338,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
                 string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
-                
+
                 // debug
                 //System.Diagnostics.Debug.WriteLine("===DeleteRecord() called ===");
                 //System.Diagnostics.Debug.WriteLine("SQL:"+query);
@@ -375,29 +379,30 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             if (i > 0)
                 sb.Append(" " + condition.Logic + " ");
 
-            string operatorText = GetOperatorText(condition.Operator);
-            sb.Append(condition.Field + " " + operatorText + " '" + condition.Value + "'");
+            string operatorText = GetOperatorText(condition.Operator, condition.Value);
+            //sb.Append(condition.Field + " " + operatorText + " '" + condition.Value + "'");
+            sb.Append(condition.Field + " " + operatorText);
         }
         filterConditions.Value = sb.ToString();
     }
 
-    private string GetOperatorText(string op)
+    private string GetOperatorText(string op, string val)
     {
         switch (op)
         {
-            case "=": return "=";
-            case "!=": return "!=";
-            case ">": return ">";
-            case ">=": return ">=";
-            case "<": return "<";
-            case "<=": return "<=";
-            case "like_start": return "LIKE";
-            case "like_end": return "LIKE";
-            case "not_like_start": return "NOT LIKE";
-            case "not_like_end": return "NOT LIKE";
-            case "like": return "LIKE";
-            case "not_like": return "NOT LIKE";
-            default: return "=";
+            case "=": return "=" + " '" + val + "'";
+            case "!=": return "!=" + " '" + val + "'";
+            case ">": return ">" + " '" + val + "'";
+            case ">=": return ">=" + " '" + val + "'";
+            case "<": return "<" + " '" + val + "'";
+            case "<=": return "<=" + " '" + val + "'";
+            case "like_start": return "LIKE" + " '%" + val + "'";
+            case "like_end": return "LIKE" + " '" + val + "%'";
+            case "not_like_start": return "NOT LIKE" + " '%" + val + "'";
+            case "not_like_end": return "NOT LIKE" + " '" + val + "%'";
+            case "like": return "LIKE" + " '%" + val + "%'";
+            case "not_like": return "NOT LIKE" + " '%" + val + "%'";
+            default: return "=" + " '" + val + "'";
         }
     }
 
@@ -515,7 +520,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser",Request.ServerVariables.Get("AUTH_USER"));
+                    cmd.Parameters.AddWithValue("@UpdateUser", Request.ServerVariables.Get("AUTH_USER"));
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
@@ -571,80 +576,83 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     FilterCondition condition = (FilterCondition)FilterConditions[i];
                     if (i > 0)
                         query.Append(" " + condition.Logic + " ");
-                    query.Append(BuildWhereClause(condition, i));
+                    //query.Append(BuildWhereClause(condition, i));
+                    string operatorText = GetOperatorText(condition.Operator, condition.Value);
+                    query.Append(condition.Field + " " + operatorText);
                 }
             }
 
             query.Append(" ORDER BY UPDATE_TIME DESC");
 
-            using (OleDbCommand cmd = new OleDbCommand(query.ToString(), conn))
+            OleDbCommand cmd = new OleDbCommand(query.ToString(), conn);
+            //using (OleDbCommand cmd = new OleDbCommand(query.ToString(), conn))
+            //{
+            //    for (int i = 0; i < FilterConditions.Count; i++)
+            //    {
+            //      FilterCondition condition = (FilterCondition)FilterConditions[i];
+            //    string paramName = "@FilterValue" + i;
+            //
+            //  switch (condition.Operator)
+            //{
+            //  case "like_start":
+            //    cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
+            //  break;
+            // case "like_end":
+            //   cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
+            //   break;
+            //case "not_like_start":
+            //  cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
+            //break;
+            //case "not_like_end":
+            //    cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
+            //    break;
+            //case "like":
+            //case "not_like":
+            //    cmd.Parameters.AddWithValue(paramName, "%" + condition.Value + "%");
+            //    break;
+            //default:
+            //    cmd.Parameters.AddWithValue(paramName, condition.Value);
+            //    break;
+            //}
+            //}
+
+            using (OleDbDataAdapter adapter = new OleDbDataAdapter(cmd))
             {
-                for (int i = 0; i < FilterConditions.Count; i++)
-                {
-                    FilterCondition condition = (FilterCondition)FilterConditions[i];
-                    string paramName = "@FilterValue" + i;
-
-                    switch (condition.Operator)
-                    {
-                        case "like_start":
-                            cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
-                            break;
-                        case "like_end":
-                            cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
-                            break;
-                        case "not_like_start":
-                            cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
-                            break;
-                        case "not_like_end":
-                            cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
-                            break;
-                        case "like":
-                        case "not_like":
-                            cmd.Parameters.AddWithValue(paramName, "%" + condition.Value + "%");
-                            break;
-                        default:
-                            cmd.Parameters.AddWithValue(paramName, condition.Value);
-                            break;
-                    }
-                }
-
-                using (OleDbDataAdapter adapter = new OleDbDataAdapter(cmd))
-                {
-                    DataTable dt = new DataTable();
-                    conn.Open();
-                    adapter.Fill(dt);
-                    return dt;
-                }
+                DataTable dt = new DataTable();
+                conn.Open();
+                adapter.Fill(dt);
+                return dt;
             }
+
         }
     }
 
-    private string BuildWhereClause(FilterCondition condition, int index)
-    {
-        string paramName = "@FilterValue" + index;
-        string field = condition.Field;
+    //private string BuildWhereClause(FilterCondition condition, int index)
+    //{
+    //    string paramName = "@FilterValue" + index;
+    //    string field = condition.Field;
 
-        switch (condition.Operator)
-        {
-            case "=":
-            case "!=":
-            case ">":
-            case ">=":
-            case "<":
-            case "<=":
-                return field + " " + condition.Operator + " " + paramName;
-            case "like_start":
-            case "like_end":
-            case "like":
-                return field + " LIKE " + paramName;
-            case "not_like_start":
-            case "not_like_end":
-            case "not_like":
-                return field + " NOT LIKE " + paramName;
-            default:
-                return field + " = " + paramName;
-        }
-    }
+    //    switch (condition.Operator)
+    //    {
+    //        case "=":
+    //        case "!=":
+    //        case ">":
+    //        case ">=":
+    //        case "<":
+    //        case "<=":
+    //            return field + " " + condition.Operator + " " + paramName;
+    //        case "like_start":
+    //        case "like_end":
+    //        case "like":
+    //            return field + " LIKE " + paramName;
+    //        case "not_like_start":
+    //        case "not_like_end":
+    //        case "not_like":
+    //            return field + " NOT LIKE " + paramName;
+    //        default:
+    //            return field + " = " + paramName;
+    //    }
+    //}
 
     private void GenerateDataTable(DataTable dt)
     {
