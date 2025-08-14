@@ -1,3 +1,4 @@
+
 <%@ Page Language="C#" AutoEventWireup="true" CodeFile="WetBatchSizeControl.aspx.cs" Inherits="WetBatchSizeControl"%>
 
 <!DOCTYPE html>
@@ -577,7 +578,7 @@
                                     </select>
                                 </div>
                                 <div class="filter-item">
-                                    <button type="button" id="btn_addFilter" onclick="btnAddFilter_Click" runat="server" class="btn btn-sucess btn-sm">新增篩選</button>
+                                    <button type="button" id="btn_addFilter" onclick="addFilterCondition()" class="btn btn-success btn-sm">新增篩選</button>
                                 </div>
                             </div>
                         
@@ -691,8 +692,20 @@
                 return;
             }
 
-             IE兼容的 PostBack
-            __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
+             // IE兼容的 PostBack
+             // 使用 __doPostBack 呼叫後端處理
+             if (typeof __doPostBack === 'function') {
+                __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
+             }
+             else {
+                console.warn('__doPostBack not available');
+             }
+            
+        }
+
+        // 修改按鈕點擊事件處理
+        function btnAddFilter_Click() {
+            addFilterCondition();
         }
 
         // 更新時間戳函數
