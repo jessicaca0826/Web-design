@@ -10,16 +10,19 @@ using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
 using System.Configuration;
 using P12RTD_DLL;
+using LoginCheckServiceProvider;
 using System.Runtime.Remoting.Messaging;
 using System.Net.Cache;
 using System.Diagnostics.Eventing.Reader;
 using System.Runtime.Remoting.Contexts;
 using System.Collections.Specialized;
+using System.Linq;
 
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
     string vCheckResult;
-    string vFunctionName = "WET_BATCH_SIZE_SETTING";
+    string vFunctionName = "WET_BATCH_SIZE_CONTROL";
+    string vTableName = "RTD.WET_BATCH_SIZE_CONTROL";
     string ConnectionString = ConfigurationSettings.AppSettings["RTD_P12"];
     Access_control RTD_ACCESS_CONTROL = new Access_control();
     Table_Info_control RTD_TABLE_INFO = new Table_Info_control();
@@ -76,6 +79,20 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => AddFilter, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugAddFilter", string.Format("console.log('後端已執行 AddFilterCondition，arg={0}');", arg), true);
                 AddFilterCondition(arg);
+                return;
+            }
+            else if (target == "SaveRecord")
+            {
+                string[] parts = arg.Split('|');
+                if (parts.Length >= 5) {
+                    string id = parts[0];
+                    int batchSize = int.Parse(parts[1]);
+                    int? minWafer = string.IsNullOrEmpty(parts[2]) ? (int?)null : int.Parse(parts[2]);
+                    string memo = parts[3];
+                    int active = int.Parse(parts[4]);
+                    UpdateRecord(id, batchSize, minWafer, memo, active);
+                    //LoadData();
+                }
                 return;
             }
         }
@@ -165,7 +182,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             if (!ValidateForm())
                 return;
 
-            if (!ValidateUser())
+            if (!checkMM())
             {
                 ShowMessage("使用者驗證失敗", "alert-danger");
                 return;
@@ -219,28 +236,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    protected override void RaisePostBackEvent(IPostBackEventHandler sourceControl, string eventArgument)
-    {
-        string eventTarget = Request.Form["__EVENTTARGET"];
-
-        if (eventTarget == "AddFilter")
-        {
-            AddFilterCondition(eventArgument);
-        }
-        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget == "UpdateActive")
-        {
-            UpdateActiveStatus(eventArgument);
-        }
-        else if (!string.IsNullOrEmpty(eventTarget) && eventTarget == "DeleteRecord")
-        {
-            DeleteRecord(eventArgument);
-        }
-        else
-        {
-            base.RaisePostBackEvent(sourceControl, eventArgument);
-        }
-    }
-
     private void AddFilterCondition(string conditionData)
     {
         // 驗證輸入值
@@ -256,7 +251,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             if (parts.Length >= 4)
             {
                 // 驗證條件值不為空
-                string value = parts[2] != null ? parts[2].Trim() : "";
+                string value = parts[2] != null ? parts[2].Trim().ToUpper() : "";
 
                 if (string.IsNullOrEmpty(value))
                 {
@@ -264,7 +259,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     return;
                 }
 
-                FilterCondition condition = new FilterCondition(parts[0], parts[1], parts[2], parts[3]);
+                FilterCondition condition = new FilterCondition(parts[0], parts[1], value, parts[3]);
                 FilterConditions.Add(condition);
                 UpdateFilterDisplay();
 
@@ -274,7 +269,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
                     "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
 
-                //ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorDisplayText(parts[1]) + " '" + value + "'", "alert-success");
+                ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorText(parts[1] , value), "alert-success");
             }
 
             else
@@ -300,6 +295,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             }
 
             string id = parts[0];
+            string updUser = Request.ServerVariables.Get("AUTH_USER");
             bool isActive = parts[1].Equals("true", System.StringComparison.OrdinalIgnoreCase);
 
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
@@ -308,13 +304,15 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
-                    cmd.Parameters.AddWithValue("UPDATE_USER", Request.ServerVariables.Get("AUTH_USER"));
+                    cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
                     cmd.Parameters.AddWithValue("ID1", id);
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
                     if (result > 0)
                     {
+                        UpdateLog(id, "UPDATE");
+                        RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
                         ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
                         LoadData();
                     }
@@ -337,7 +335,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = 0, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                string query = "DELETE RTD.WET_BATCH_SIZE_CONTROL WHERE ID1 = ?";
 
                 // debug
                 //System.Diagnostics.Debug.WriteLine("===DeleteRecord() called ===");
@@ -347,13 +345,14 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     string updUser = Request.ServerVariables.Get("AUTH_USER");
-                    cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
                     cmd.Parameters.AddWithValue("ID1", idString);
 
                     conn.Open();
+                    UpdateLog(idString, "DELETE");
                     int result = cmd.ExecuteNonQuery();
                     if (result > 0)
                     {
+                        RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
                         ShowMessage("記錄已成功刪除", "alert-success");
                         LoadData();
                     }
@@ -370,6 +369,97 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
+    private void UpdateRecord(string idString, int batchSize, int? minWafer, string memo, int active)
+    {
+        ArrayList errors = new ArrayList();
+
+        if (batchSize == 1)
+        {
+            if (!minWafer.HasValue || minWafer.Value < 1 || minWafer.Value > 25)
+            {
+                errors.Add("單批設定，min wafer count需介於1到25片");
+            }
+        }
+
+        else if (batchSize == 2)
+        {
+            if (!minWafer.HasValue || minWafer.Value < 2 || minWafer.Value > 50)
+            {
+                errors.Add("雙批設定，min wafer count需介於2到50片");
+            }
+        }
+
+        if (errors.Count > 0)
+        {
+            ShowMessage("更新驗證錯誤:<br>" + string.Join("<br>", errors.ToArray()), "alert-danger");
+        }
+        
+        
+        try
+        {
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+            {
+                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+
+                using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                {
+                    string updUser = Request.ServerVariables.Get("AUTH_USER");
+                    cmd.Parameters.AddWithValue("BatchSize", batchSize);
+                    cmd.Parameters.AddWithValue("MinWaferCount", (object) minWafer ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("Memo", memo ?? "");
+                    cmd.Parameters.AddWithValue("Active", active);
+                    cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
+                    cmd.Parameters.AddWithValue("ID1", idString);
+
+                    conn.Open();
+                    int result = cmd.ExecuteNonQuery();
+                    if (result > 0)
+                    {
+                        UpdateLog(idString, "UPDATE");
+                        RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
+                        ShowMessage("記錄已成功更新", "alert-success");
+                        LoadData();
+                    }
+                    else
+                    {
+                        ShowMessage("更新失敗，找不到指定的記錄", "alert-warning");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("更新記錄失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
+    private void UpdateLog(string id, string actionType) {
+        string query = @"
+            INSERT INTO RTD.WET_BATCH_SIZE_CONTROL_LOG
+            (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, 
+            BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1, ACTION_TYPE) 
+            SELECT EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO,
+            BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, SYSDATE, ACTIVE, ID1, ? 
+            FROM RTD.WET_BATCH_SIZE_CONTROL WHERE ID1 = ? ";
+
+        try
+        {
+            using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+            {
+                using (OleDbCommand cmd = new OleDbCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("ACTION", actionType);
+                    cmd.Parameters.AddWithValue("ID1", id);
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+        catch (Exception ex) {
+            ShowMessage("新增Log失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
     private void UpdateFilterDisplay()
     {
         StringBuilder sb = new StringBuilder();
@@ -380,7 +470,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 sb.Append(" " + condition.Logic + " ");
 
             string operatorText = GetOperatorText(condition.Operator, condition.Value);
-            //sb.Append(condition.Field + " " + operatorText + " '" + condition.Value + "'");
             sb.Append(condition.Field + " " + operatorText);
         }
         filterConditions.Value = sb.ToString();
@@ -396,10 +485,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             case ">=": return ">=" + " '" + val + "'";
             case "<": return "<" + " '" + val + "'";
             case "<=": return "<=" + " '" + val + "'";
-            case "like_start": return "LIKE" + " '%" + val + "'";
-            case "like_end": return "LIKE" + " '" + val + "%'";
-            case "not_like_start": return "NOT LIKE" + " '%" + val + "'";
-            case "not_like_end": return "NOT LIKE" + " '" + val + "%'";
+            case "like_start": return "LIKE" + " '" + val + "%'";
+            case "like_end": return "LIKE" + " '%" + val + "'";
+            case "not_like_start": return "NOT LIKE" + " '" + val + "%'";
+            case "not_like_end": return "NOT LIKE" + " '%" + val + "'";
             case "like": return "LIKE" + " '%" + val + "%'";
             case "not_like": return "NOT LIKE" + " '%" + val + "%'";
             default: return "=" + " '" + val + "'";
@@ -434,12 +523,49 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
+    private bool checkMM()
+    {
+        cCredentialSoapHeader credential = new cCredentialSoapHeader();
+        LoginCheckService logincheck = new LoginCheckService();
+        credential.Username = "WS_RTD";
+        credential.Password = "py20@RTD+dIKa/wZK+aihwAk15sJQJQ==";
+
+        string userId = userID.Value != null ? userID.Value.Trim() : "";
+        string password = passward.Value != null ? passward.Value.Trim() : "";
+
+        logincheck.cCredentialSoapHeaderValue = credential;
+
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(password))
+            return false;
+
+        try {
+            string result = logincheck.VerifyWithMessage(userId, password);
+
+            if (result.Substring(0, 4) == "0|+|")
+            {
+                return true;
+            }
+
+            else {
+                this.Session.Remove("Password");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("登入失敗: " + ex.Message, "alert-danger");
+            return false;
+        }
+    }
+
     private bool ValidateForm()
     {
         ArrayList errors = new ArrayList();
 
         if (string.IsNullOrEmpty(txb_eqpid.Value))
             errors.Add("EQP_ID 不能為空");
+        else if (txb_eqpid.Value == "*")
+            errors.Add("EQP_ID 不能為*");
         if (string.IsNullOrEmpty(txb_prodgid.Value))
             errors.Add("PRODG_ID 不能為空");
         if (string.IsNullOrEmpty(tbx_prodgrp.Value))
@@ -456,6 +582,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             int waferCount;
             if (!int.TryParse(tbx_min_wafer_cnt.Value, out waferCount) || waferCount < 0)
                 errors.Add("MIN_WAFER_COUNT 必須是非負整數");
+            else {
+                if (batch_size.Value == "1" && (waferCount < 1 || waferCount > 25))
+                    errors.Add("單批設定，min wafer count需介於1到25片");
+                else if (batch_size.Value == "2" && (waferCount < 2 || waferCount > 50))
+                    errors.Add("雙批設定，min wafer count需介於2到50片");
+            }
         }
 
         if (errors.Count > 0)
@@ -490,19 +622,21 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
+                string newID = GenerateRandomId();
+                string updUser = Request.ServerVariables.Get("AUTH_USER");
                 string query = @"
                     INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
                     (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1)
                     VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, dbms_random.string('A', 16))";
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, ?)";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
-                    cmd.Parameters.AddWithValue("@EqpId", txb_eqpid.Value.Trim());
-                    cmd.Parameters.AddWithValue("@ProdgId", txb_prodgid.Value.Trim());
-                    cmd.Parameters.AddWithValue("@ProductGroup", tbx_prodgrp.Value.Trim());
-                    cmd.Parameters.AddWithValue("@ProdspecId", tbx_prodspecid.Value.Trim());
-                    cmd.Parameters.AddWithValue("@OpeNo", tbx_openo.Value.Trim());
+                    cmd.Parameters.AddWithValue("@EqpId", txb_eqpid.Value.Trim().ToUpper());
+                    cmd.Parameters.AddWithValue("@ProdgId", txb_prodgid.Value.Trim().ToUpper());
+                    cmd.Parameters.AddWithValue("@ProductGroup", tbx_prodgrp.Value.Trim().ToUpper());
+                    cmd.Parameters.AddWithValue("@ProdspecId", tbx_prodspecid.Value.Trim().ToUpper());
+                    cmd.Parameters.AddWithValue("@OpeNo", tbx_openo.Value.Trim().ToUpper());
 
                     int batchSizeValue;
                     int.TryParse(batch_size.Value, out batchSizeValue);
@@ -520,10 +654,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     }
 
                     cmd.Parameters.AddWithValue("@Memo", tbx_memo.Value != null ? tbx_memo.Value.Trim() : "");
-                    cmd.Parameters.AddWithValue("@UpdateUser", Request.ServerVariables.Get("AUTH_USER"));
+                    cmd.Parameters.AddWithValue("@UpdateUser", updUser);
+                    cmd.Parameters.AddWithValue("@ID1", newID);
 
                     conn.Open();
                     int result = cmd.ExecuteNonQuery();
+                    UpdateLog(newID, "INSERT"); //Log紀錄
+                    RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
                     return result > 0;
                 }
             }
@@ -539,16 +676,26 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
+    private string GenerateRandomId(int length = 16) {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
     private void LoadData()
     {
         try
         {
             DataTable dt = GetBatchSizeData();
+
             GenerateDataTable(dt);
 
+            DataSet ds_temp = new DataSet();
+            ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
+            string lastUploadTime = ds_temp.Tables[vFunctionName].Rows[0]["LAST_UPLOAD_2_RTD_TIME"].ToString();
             string timeScript = @"
                 if (document.getElementById('lastUploadTime')) {
-                    document.getElementById('lastUploadTime').innerHTML = '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + @"';
+                    document.getElementById('lastUploadTime').innerHTML = '" + lastUploadTime + @"';
                 }";
             ClientScript.RegisterStartupScript(this.GetType(), "updateUploadTime", timeScript, true);
         }
@@ -585,36 +732,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             query.Append(" ORDER BY UPDATE_TIME DESC");
 
             OleDbCommand cmd = new OleDbCommand(query.ToString(), conn);
-            //using (OleDbCommand cmd = new OleDbCommand(query.ToString(), conn))
-            //{
-            //    for (int i = 0; i < FilterConditions.Count; i++)
-            //    {
-            //      FilterCondition condition = (FilterCondition)FilterConditions[i];
-            //    string paramName = "@FilterValue" + i;
-            //
-            //  switch (condition.Operator)
-            //{
-            //  case "like_start":
-            //    cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
-            //  break;
-            // case "like_end":
-            //   cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
-            //   break;
-            //case "not_like_start":
-            //  cmd.Parameters.AddWithValue(paramName, condition.Value + "%");
-            //break;
-            //case "not_like_end":
-            //    cmd.Parameters.AddWithValue(paramName, "%" + condition.Value);
-            //    break;
-            //case "like":
-            //case "not_like":
-            //    cmd.Parameters.AddWithValue(paramName, "%" + condition.Value + "%");
-            //    break;
-            //default:
-            //    cmd.Parameters.AddWithValue(paramName, condition.Value);
-            //    break;
-            //}
-            //}
 
             using (OleDbDataAdapter adapter = new OleDbDataAdapter(cmd))
             {
@@ -627,38 +744,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    //private string BuildWhereClause(FilterCondition condition, int index)
-    //{
-    //    string paramName = "@FilterValue" + index;
-    //    string field = condition.Field;
-
-    //    switch (condition.Operator)
-    //    {
-    //        case "=":
-    //        case "!=":
-    //        case ">":
-    //        case ">=":
-    //        case "<":
-    //        case "<=":
-    //            return field + " " + condition.Operator + " " + paramName;
-    //        case "like_start":
-    //        case "like_end":
-    //        case "like":
-    //            return field + " LIKE " + paramName;
-    //        case "not_like_start":
-    //        case "not_like_end":
-    //        case "not_like":
-    //            return field + " NOT LIKE " + paramName;
-    //        default:
-    //            return field + " = " + paramName;
-    //    }
-    //}
-
     private void GenerateDataTable(DataTable dt)
     {
         StringBuilder html = new StringBuilder();
         html.Append("<table class='table-custom'>");
         html.Append("<thead><tr>");
+        html.Append("<th style='width: 80px;'>修改</th>");
         html.Append("<th style='width: 80px;'>EQP_ID</th>");
         html.Append("<th style='width: 100px;'>PRODG_ID</th>");
         html.Append("<th style='width: 120px;'>PRODUCT_GROUP</th>");
@@ -670,35 +761,39 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         html.Append("<th style='width: 80px;'>UPDATE_USER</th>");
         html.Append("<th style='width: 140px;'>UPDATE_TIME</th>");
         html.Append("<th style='width: 60px;'>啟用</th>");
-        html.Append("<th style='width: 80px;'>操作</th>");
+        //html.Append("<th style='width: 80px;'>操作</th>");
         html.Append("</tr></thead>");
         html.Append("<tbody>");
 
-        for (int i = 0; i < dt.Rows.Count; i++)
+        foreach (DataRow row in dt.Rows)
         {
-            DataRow row = dt.Rows[i];
-            html.Append("<tr>");
+            string id = row["ID1"].ToString();
+            bool isActive = Convert.ToBoolean(row["ACTIVE"]);
+
+            html.Append("<tr data-id='" + id + "'>");
+            html.Append("<td class='modify-cell'>");
+            html.Append("<button type='button' class='btn btn-custom btn-sm btn-edit' onclick=\"enterEditMode(this)\">修改</button>");
+            html.Append("<button type='button' class='btn btn-success btn-sm btn-save' style='display:none' onclick=\"saveRow(this)\">儲存</button>");
+            html.Append("<button type='button' class='btn btn-danger btn-sm btn-del' style='display:none' " + "onclick=\"deleteRecord('" + row["ID1"] + "')\">刪除</button>");
+            html.Append("<button type='button' class='btn btn-custom btn-sm btn-cancel' style='display:none' onclick=\"cancelEdit(this)\">取消</button>");
+            html.Append("</td>");
+
             html.Append("<td>" + row["EQP_ID"] + "</td>");
             html.Append("<td>" + row["PRODG_ID"] + "</td>");
             html.Append("<td>" + row["PRODUCT_GROUP"] + "</td>");
             html.Append("<td>" + row["PRODSPEC_ID"] + "</td>");
             html.Append("<td>" + row["OPE_NO"] + "</td>");
-            html.Append("<td>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
-            html.Append("<td>" + row["MIN_WAFER_COUNT"] + "</td>");
-            html.Append("<td>" + row["MEMO"] + "</td>");
+            html.Append("<td class='batch-size'>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
+            html.Append("<td class='min-wafer'>" + row["MIN_WAFER_COUNT"] + "</td>");
+            html.Append("<td class='memo'>" + row["MEMO"] + "</td>");
             html.Append("<td>" + row["UPDATE_USER"] + "</td>");
             html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
 
-            bool isActive = Convert.ToBoolean(row["ACTIVE"]);
             html.Append("<td class='modify-cell'>");
             html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") +
-                       " onclick=\"updateActive('" + row["ID1"] + "', this.checked)\" />");
+                       " onclick=\"updateActive('" + id + "', this.checked)\" />");
             html.Append("</td>");
 
-            html.Append("<td class='modify-cell'>");
-            html.Append("<button type='button' class='btn btn-custom btn-sm' " +
-                       "onclick=\"deleteRecord('" + row["ID1"] + "')\">刪除</button>");
-            html.Append("</td>");
             html.Append("</tr>");
         }
 
