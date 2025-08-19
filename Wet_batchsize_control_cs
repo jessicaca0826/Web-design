@@ -84,14 +84,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             else if (target == "SaveRecord")
             {
                 string[] parts = arg.Split('|');
-                if (parts.Length >= 5) {
+                if (parts.Length >= 4) {
                     string id = parts[0];
                     int batchSize = int.Parse(parts[1]);
                     int? minWafer = string.IsNullOrEmpty(parts[2]) ? (int?)null : int.Parse(parts[2]);
                     string memo = parts[3];
-                    int active = int.Parse(parts[4]);
-                    UpdateRecord(id, batchSize, minWafer, memo, active);
-                    //LoadData();
+                    UpdateRecord(id, batchSize, minWafer, memo);
+                    LoadData();
                 }
                 return;
             }
@@ -159,7 +158,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             
             window.updateActive = function(id, isChecked) {
                 var arg = id + '|' + (isChecked ? 'true' : 'false');
-                if (typeof __doPostBack === 'function') {
+                if (typeof __doPostBack === 'function' && confirm('確定要變更此設定的啟用狀態嗎?')) {
                     __doPostBack('UpdateActive', arg);
                 } else {
                     console.warn('__doPostBack not available');
@@ -369,7 +368,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
     }
 
-    private void UpdateRecord(string idString, int batchSize, int? minWafer, string memo, int active)
+    private void UpdateRecord(string idString, int batchSize, int? minWafer, string memo)
     {
         ArrayList errors = new ArrayList();
 
@@ -399,7 +398,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -407,7 +406,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     cmd.Parameters.AddWithValue("BatchSize", batchSize);
                     cmd.Parameters.AddWithValue("MinWaferCount", (object) minWafer ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("Memo", memo ?? "");
-                    cmd.Parameters.AddWithValue("Active", active);
                     cmd.Parameters.AddWithValue("UPDATE_USER", updUser);
                     cmd.Parameters.AddWithValue("ID1", idString);
 
@@ -793,6 +791,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") +
                        " onclick=\"updateActive('" + id + "', this.checked)\" />");
             html.Append("</td>");
+           
 
             html.Append("</tr>");
         }
