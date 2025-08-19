@@ -316,7 +316,7 @@
         .form-control-textarea {
             width: 100%;
             max-width: 350px;
-            height: 70px;
+            height: 150px;
             border: 1px solid #bdc3c7;
             border-radius: 3px;
             padding: 8px;
@@ -483,7 +483,7 @@
                     <div class="section-header">
                         <h5>Add New Setting</h5>
                         <div class="login-section">
-                            <label>ID:</label>
+                            <label>MM ID:</label>
                             <input type="text" id="userID" runat="server" class="form-control">
                             <label>Password:</label>
                             <input type="password" id="passward" runat="server" class="form-control">
@@ -520,6 +520,7 @@
                                 <option value="">請選擇</option>
                                 <option value="1">單批</option>
                                 <option value="2">雙批</option>
+                                <option value="0">*</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -593,10 +594,13 @@
                         </div>
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
-                                <span style="color: Red; font-weight:bold">Remarks:</span><br>
+                                <span style="color:#2c3e50 Red; font-weight:bold">Remarks:</span><br>
                                 1. 歷史設定檔參考連結<br>
-                                2. 相關注意事項<br>
-                                3. 操作說明
+                                2. PRODG_ID, PRODSPEC_ID, OPE_NO允許為<span style="font-weight:bold">*</span>或<span style="font-weight:bold">部分*</span><br>
+                                3. EQP_ID允許<span style="font-weight:bold">部分*</span>，但至少需輸入兩碼字元, 如:WW*, WF*, WWT52...)<br>
+                                <font color=red>4."*"使用不當可能造成WET機台無法派貨, 請謹慎使用!</font><br>
+                                5. 實際卡控不包含PRODUCT_GROUP 欄位，此欄位僅方便user分類使用。<br>
+                                6. 請同步至<a href="http://rbrptw01.twn.psc/module/WET/E0_Path_Instantly/E0D.aspx?module=WET&flowfab=owner&module_owner=P" target="_blank">Moduleweb RTD卡控的紀錄網頁</a>更新資料<br>
                             </div>
                         </div>
                     </div>
@@ -613,9 +617,9 @@
                     <!-- 操作說明 -->
                     <div class="alert alert-info" style="margin-top: 20px; font-size: 12px;">
                     <strong>操作說明：</strong><br>
-                    1. 上方表單可新增設定，填寫完畢後點擊「新增」按鈕<br>
+                    1. Add New Setting區塊可新增設定，填寫完畢後輸入MM帳號/密碼，點擊「新增」按鈕<br>
                     2. 篩選區域可設定查詢條件，支持多重條件組合<br>
-                    3. 表格中可直接修改現有設定<br>
+                    3. Current Setting區塊可修改現有設定，點擊「修改」按鈕<br>
                     4. 勾選「啟用」可控制設定是否生效
                     </div>
                 </div>
@@ -692,20 +696,84 @@
                 return;
             }
 
-             // IE兼容的 PostBack
-             // 使用 __doPostBack 呼叫後端處理
-             if (typeof __doPostBack === 'function') {
+            // IE兼容的 PostBack
+            // 使用 __doPostBack 呼叫後端處理
+            if (typeof __doPostBack === 'function') {
                 __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
-             }
-             else {
+            }
+            else {
                 console.warn('__doPostBack not available');
-             }
-            
+            }
+
         }
 
         // 修改按鈕點擊事件處理
         function btnAddFilter_Click() {
             addFilterCondition();
+        }
+
+        function enterEditMode(btn) {
+            var row = $(btn).closest('tr');
+            var batchSizeCell = row.find('.batch-size');
+            var minWaferCell = row.find('.min-wafer');
+            var memoCell = row.find('.memo');
+            var activeCell = row.find('.active');
+
+            // 暫存原始值
+            row.data('orig-batch', batchSizeCell.text().trim());
+            row.data('orig-min', minWaferCell.text().trim());
+            row.data('orig-memo', memoCell.text().trim());
+            row.data('orig-active', activeCell.text().trim());
+
+            // 將內容換成可編輯表單
+            var currentBatchSize = row.data('orig-batch');
+            var batchSelect = "<select class='form-control form-control-sm'>" +
+                "<option value='1'" + (currentBatchSize === '單批' ? " selected" : "") + ">單批</option>" +
+                "<option value='2'" + (currentBatchSize === '雙批' ? " selected" : "") + ">雙批</option>" +
+                "</select>";
+            batchSizeCell.html(batchSelect);
+
+
+
+            //var currentMin = minWaferCell.text().trim();
+            minWaferCell.html("<input type='text' class='form-control form-control-sm' value='" + row.data('orig-min') + "' />");
+
+            //var currentMemo = memoCell.text().trim();
+            memoCell.html("<input type='text' class='form-control form-control-sm' value='" + row.data('orig-memo') + "' />");
+
+            // ACTIVE用radio
+            var checked1 = row.data('orig-active').active === "1" ? "checked" : "";
+            var checked0 = row.data('orig-active').active === "0" ? "checked" : "";
+            var radioHtml = "<label><input type='radio' name='active_" + row.data('id') + "' value='1' " + checked1 + ">啟用</label>" +
+                            "<label style='margin-left:10px;'><input type='radio' name='active_" + row.data('id') + "' value='0' " + checked0 + ">停用</label>";
+
+            // 按鈕切換
+            row.find('.btn-edit').hide();
+            row.find('.btn-save, .btn-del, .btn-cancel').show();
+        }
+
+        function cancelEdit(btn) {
+            var row = $(btn).closest('tr');
+
+            // 還原原始值
+            row.find('.batch-size').text(row.data('orig-batch'));
+            row.find('.min-wafer').text(row.data('orig-min'));
+            row.find('.memo').text(row.data('orig-memo'));
+
+            // 按鈕切換
+            row.find('.btn-edit').show();
+            row.find('.btn-save, .btn-del, .btn-cancel').hide();
+        }
+
+        function saveRow(btn) {
+            var row = $(btn).closest('tr');
+            var id = row.data('id');
+            var batchSize = row.find('.batch-size select').val();
+            var minWafer = row.find('.min-wafer input').val();
+            var memo = row.find('.memo input').val();
+            if (typeof __doPostBack === 'function') {
+                __doPostBack('SaveRecord', id + '|' + batchSize + '|' + minWafer + '|' + memo);
+            }
         }
 
         // 更新時間戳函數
