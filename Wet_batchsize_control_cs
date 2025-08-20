@@ -65,6 +65,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => DeleteRecord, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugDeleteRecord", string.Format("console.log('後端已執行 DeleteRecord，ID1={0}');", arg), true);
                 DeleteRecord(arg);
+                //InitializePage();
                 return;
             }
             else if (target == "UpdateActive")
@@ -72,6 +73,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => UpdateActive, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugUpdateActive", string.Format("console.log('後端已執行 UpdateActiveStatus，ID1={0}');", arg), true);
                 UpdateActiveStatus(arg);
+                //InitializePage();
                 return;
             }
             else if (target == "AddFilter")
@@ -79,6 +81,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => AddFilter, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugAddFilter", string.Format("console.log('後端已執行 AddFilterCondition，arg={0}');", arg), true);
                 AddFilterCondition(arg);
+                //InitializePage();
                 return;
             }
             else if (target == "SaveRecord")
@@ -90,6 +93,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     int? minWafer = string.IsNullOrEmpty(parts[2]) ? (int?)null : int.Parse(parts[2]);
                     string memo = parts[3];
                     UpdateRecord(id, batchSize, minWafer, memo);
+                    //InitializePage();
                     LoadData();
                 }
                 return;
@@ -111,6 +115,11 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     }
 
     private void InitializePage()
+    {
+        UpdateLastUpdateTime();
+    }
+
+    private void UpdateLastUpdateTime()
     {
         DataSet ds_temp = new DataSet();
         ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
@@ -157,11 +166,18 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             };
             
             window.updateActive = function(id, isChecked) {
-                var arg = id + '|' + (isChecked ? 'true' : 'false');
-                if (typeof __doPostBack === 'function' && confirm('確定要變更此設定的啟用狀態嗎?')) {
-                    __doPostBack('UpdateActive', arg);
-                } else {
-                    console.warn('__doPostBack not available');
+                if (confirm('確定要變更此設定的啟用狀態嗎?')) {
+                    var arg = id + '|' + (isChecked ? 'true' : 'false');
+                    if (typeof __doPostBack === 'function') {
+                        __doPostBack('UpdateActive', arg);
+                    }
+                    else {
+                        console.warn('__doPostBack not available');
+                    }
+                }
+                else {
+                    // 用戶取消，還原為原始狀態
+                    event.target.checked = !isChecked;
                 }
             };
         ";
@@ -286,6 +302,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         try
         {
+            if (!checkMM())
+            {
+                ShowMessage("使用者驗證失敗", "alert-danger");
+                return;
+            }
+
             string[] parts = data.Split('|');
             if (parts.Length < 2)
             {
@@ -299,7 +321,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                string query = "UPDATE " + vTableName;
+                query += " SET ACTIVE = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("ACTIVE", isActive ? 1 : 0);
@@ -312,6 +335,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     {
                         UpdateLog(id, "UPDATE");
                         RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
+                        UpdateLastUpdateTime();
                         ShowMessage("設定狀態已更新為: " + (isActive ? "啟用" : "停用"), "alert-success");
                         LoadData();
                     }
@@ -332,9 +356,16 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         try
         {
+            if (!checkMM())
+            {
+                ShowMessage("使用者驗證失敗", "alert-danger");
+                return;
+            }
+
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "DELETE RTD.WET_BATCH_SIZE_CONTROL WHERE ID1 = ?";
+                string query = "DELETE " + vTableName;
+                query += " WHERE ID1 = ?";
 
                 // debug
                 //System.Diagnostics.Debug.WriteLine("===DeleteRecord() called ===");
@@ -352,6 +383,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     if (result > 0)
                     {
                         RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
+                        UpdateLastUpdateTime();
                         ShowMessage("記錄已成功刪除", "alert-success");
                         LoadData();
                     }
@@ -370,6 +402,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private void UpdateRecord(string idString, int batchSize, int? minWafer, string memo)
     {
+        if (!checkMM())
+        {
+            ShowMessage("使用者驗證失敗", "alert-danger");
+            return;
+        }
+
         ArrayList errors = new ArrayList();
 
         if (batchSize == 1)
@@ -398,7 +436,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
-                string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                //string query = "UPDATE RTD.WET_BATCH_SIZE_CONTROL SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
+                string query = "UPDATE " + vTableName;
+                query += " SET BATCH_SIZE = ?, MIN_WAFER_COUNT = ?, MEMO = ?, UPDATE_USER = ?, UPDATE_TIME = SYSDATE WHERE ID1 = ?";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -415,6 +455,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     {
                         UpdateLog(idString, "UPDATE");
                         RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
+                        UpdateLastUpdateTime();
                         ShowMessage("記錄已成功更新", "alert-success");
                         LoadData();
                     }
@@ -604,7 +645,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             Session["RememberUser"] = true;
             Session["UserID"] = userID.Value;
             Session["Password"] = passward.Value;
-            Session.Timeout = 480; // 8小時
+            //Session.Timeout = 480; // 8小時
         }
         else
         {
@@ -622,11 +663,15 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             {
                 string newID = GenerateRandomId();
                 string updUser = Request.ServerVariables.Get("AUTH_USER");
-                string query = @"
-                    INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
-                    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1)
-                    VALUES 
-                    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, ?)";
+                //string query = @"
+                //    INSERT INTO RTD.WET_BATCH_SIZE_CONTROL 
+                //    (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1)
+                //    VALUES 
+                //    (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, ?)";
+
+                string query = "INSERT INTO " + vTableName;
+                query += " (EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO, BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1) ";
+                query += " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, SYSDATE, 1, ?)";
 
                 using (OleDbCommand cmd = new OleDbCommand(query, conn))
                 {
@@ -659,6 +704,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     int result = cmd.ExecuteNonQuery();
                     UpdateLog(newID, "INSERT"); //Log紀錄
                     RTD_TABLE_INFO.Update_LastUpdateTime(vFunctionName, updUser);
+                    UpdateLastUpdateTime();
                     return result > 0;
                 }
             }
