@@ -189,7 +189,7 @@
         }
         
         /*輸入框尺寸*/
-        .input-small { width: 80px; }
+        .input-small { width: 81px; }
         .input-medium { width: 140px; }
         .input-large { width: 150px; }
         .input-xlarge { width: 200px; }
@@ -595,7 +595,7 @@
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
                                 <span style="color:#2c3e50 Red; font-weight:bold">Remarks:</span><br>
-                                1. 歷史設定檔參考連結<br>
+                                1. <a href="http://pweb.twn.psc/rtd/wet/WetBatchSizeControl_hs.ASPX" target="_blank">歷史設定檔參考連結</a><br>
                                 2. PRODG_ID, PRODSPEC_ID, OPE_NO允許為<span style="font-weight:bold">*</span>或<span style="font-weight:bold">部分*</span><br>
                                 3. EQP_ID允許<span style="font-weight:bold">部分*</span>，但至少需輸入兩碼字元, 如:WW*, WF*, WWT52...)<br>
                                 <font color=red>4."*"使用不當可能造成WET機台無法派貨, 請謹慎使用!</font><br>
@@ -717,13 +717,11 @@
             var batchSizeCell = row.find('.batch-size');
             var minWaferCell = row.find('.min-wafer');
             var memoCell = row.find('.memo');
-            var activeCell = row.find('.active');
 
             // 暫存原始值
             row.data('orig-batch', batchSizeCell.text().trim());
             row.data('orig-min', minWaferCell.text().trim());
             row.data('orig-memo', memoCell.text().trim());
-            row.data('orig-active', activeCell.text().trim());
 
             // 將內容換成可編輯表單
             var currentBatchSize = row.data('orig-batch');
@@ -741,11 +739,6 @@
             //var currentMemo = memoCell.text().trim();
             memoCell.html("<input type='text' class='form-control form-control-sm' value='" + row.data('orig-memo') + "' />");
 
-            // ACTIVE用radio
-            var checked1 = row.data('orig-active').active === "1" ? "checked" : "";
-            var checked0 = row.data('orig-active').active === "0" ? "checked" : "";
-            var radioHtml = "<label><input type='radio' name='active_" + row.data('id') + "' value='1' " + checked1 + ">啟用</label>" +
-                            "<label style='margin-left:10px;'><input type='radio' name='active_" + row.data('id') + "' value='0' " + checked0 + ">停用</label>";
 
             // 按鈕切換
             row.find('.btn-edit').hide();
