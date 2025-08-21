@@ -17,6 +17,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Runtime.Remoting.Contexts;
 using System.Collections.Specialized;
 using System.Linq;
+using System.CodeDom;
 
 public partial class WetBatchSizeControl : System.Web.UI.Page
 {
@@ -65,7 +66,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => DeleteRecord, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugDeleteRecord", string.Format("console.log('後端已執行 DeleteRecord，ID1={0}');", arg), true);
                 DeleteRecord(arg);
-                //InitializePage();
+                LoadUserCredentials();
                 return;
             }
             else if (target == "UpdateActive")
@@ -73,7 +74,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => UpdateActive, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugUpdateActive", string.Format("console.log('後端已執行 UpdateActiveStatus，ID1={0}');", arg), true);
                 UpdateActiveStatus(arg);
-                //InitializePage();
+                LoadUserCredentials();
                 return;
             }
             else if (target == "AddFilter")
@@ -81,7 +82,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 System.Diagnostics.Debug.WriteLine("PostBack => AddFilter, arg=" + arg);
                 Page.ClientScript.RegisterStartupScript(this.GetType(), "debugAddFilter", string.Format("console.log('後端已執行 AddFilterCondition，arg={0}');", arg), true);
                 AddFilterCondition(arg);
-                //InitializePage();
+                LoadUserCredentials();
                 return;
             }
             else if (target == "SaveRecord")
@@ -93,8 +94,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                     int? minWafer = string.IsNullOrEmpty(parts[2]) ? (int?)null : int.Parse(parts[2]);
                     string memo = parts[3];
                     UpdateRecord(id, batchSize, minWafer, memo);
-                    //InitializePage();
                     LoadData();
+                    LoadUserCredentials();
                 }
                 return;
             }
@@ -227,6 +228,22 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
     {
         try
         {
+            // 如果使用者直接在 filterCondition.Value 輸入條件，就解析它
+            if (!string.IsNullOrEmpty(filterConditions.Value))
+            { 
+                FilterConditions.Clear();
+
+                FilterCondition directCondition = new FilterCondition
+                {
+                    Field = "",
+                    Operator = "",
+                    Value = filterConditions.Value,
+                    Logic = ""
+                };
+
+                FilterConditions.Add(directCondition);
+            
+            }
             LoadData();
             ShowMessage("篩選執行完成，共 " + FilterConditions.Count + " 個條件", "alert-info");
         }
@@ -308,6 +325,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 return;
             }
 
+            SaveUserCredentials();
+
             string[] parts = data.Split('|');
             if (parts.Length < 2)
             {
@@ -362,6 +381,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 return;
             }
 
+            SaveUserCredentials();
+
             using (OleDbConnection conn = new OleDbConnection(ConnectionString))
             {
                 string query = "DELETE " + vTableName;
@@ -407,6 +428,8 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             ShowMessage("使用者驗證失敗", "alert-danger");
             return;
         }
+
+        SaveUserCredentials();
 
         ArrayList errors = new ArrayList();
 
@@ -762,15 +785,25 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             if (FilterConditions.Count > 0)
             {
                 query.Append(" WHERE ");
-                for (int i = 0; i < FilterConditions.Count; i++)
+                if (FilterConditions.Count == 1 && string.IsNullOrEmpty(((FilterCondition)FilterConditions[0]).Field))
                 {
-                    FilterCondition condition = (FilterCondition)FilterConditions[i];
-                    if (i > 0)
-                        query.Append(" " + condition.Logic + " ");
-                    //query.Append(BuildWhereClause(condition, i));
-                    string operatorText = GetOperatorText(condition.Operator, condition.Value);
-                    query.Append(condition.Field + " " + operatorText);
+                    // 使用者手動輸入完整條件
+                    query.Append(((FilterCondition)FilterConditions[0]).Value);
                 }
+                else
+                {
+                    for (int i = 0; i < FilterConditions.Count; i++)
+                    {
+                        FilterCondition condition = (FilterCondition)FilterConditions[i];
+                        if (i > 0)
+                            query.Append(" " + condition.Logic + " ");
+                        //query.Append(BuildWhereClause(condition, i));
+                        string operatorText = GetOperatorText(condition.Operator, condition.Value);
+                        query.Append(condition.Field + " " + operatorText);
+                    }
+
+                }
+                
             }
 
             query.Append(" ORDER BY UPDATE_TIME DESC");
