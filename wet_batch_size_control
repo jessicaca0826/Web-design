@@ -9,7 +9,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Wet Batchsize Control</title>
     <link href="../css/bootstrap.flaty.min.css" rel="stylesheet">
-    
+
+    <%--sync 3廠須調整以下項目--%>
+    <%--1. 改WetBatchSizeControl.aspx.cs, WetBatchSizeControl_hs.aspx.cs的DLL和 ConnectionString參數--%>
+    <%--2. 修改歷史設定檔參考連結的超連結--%>
+
     <style>
         body {
             font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -309,18 +313,18 @@
         
         .remarks-section {
             float: left;
-            width: 35%;
+            width: 50%;
             padding: 0 15px 20px;
         }
         
         .form-control-textarea {
             width: 100%;
-            max-width: 350px;
+            max-width: 400px;
             height: 150px;
             border: 1px solid #bdc3c7;
             border-radius: 3px;
             padding: 8px;
-            font-size: 12px;
+            font-size: 14px;
             resize: vertical;
             display: block;
         }
@@ -520,7 +524,7 @@
                                 <option value="">請選擇</option>
                                 <option value="1">單批</option>
                                 <option value="2">雙批</option>
-                                <option value="0">*</option>
+                                <option value="0">無限制</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -595,7 +599,7 @@
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
                                 <span style="color:#2c3e50 Red; font-weight:bold">Remarks:</span><br>
-                                1. <a href="http://pweb.twn.psc/rtd/wet/WetBatchSizeControl_hs.ASPX" target="_blank">歷史設定檔參考連結</a><br>
+                                1. <a href="http://pweb.twn.psc/rtd/wet/WetBatchSizeControl_hs.ASPX" target="_blank">歷史設定參考連結</a><br>
                                 2. PRODG_ID, PRODSPEC_ID, OPE_NO允許為<span style="font-weight:bold">*</span>或<span style="font-weight:bold">部分*</span><br>
                                 3. EQP_ID允許<span style="font-weight:bold">部分*</span>，但至少需輸入兩碼字元, 如:WW*, WF*, WWT52...)<br>
                                 <font color=red>4."*"使用不當可能造成WET機台無法派貨, 請謹慎使用!</font><br>
@@ -728,6 +732,7 @@
             var batchSelect = "<select class='form-control form-control-sm'>" +
                 "<option value='1'" + (currentBatchSize === '單批' ? " selected" : "") + ">單批</option>" +
                 "<option value='2'" + (currentBatchSize === '雙批' ? " selected" : "") + ">雙批</option>" +
+                "<option value='0'" + (currentBatchSize === '無限制' ? " selected" : "") + ">無限制</option>" +
                 "</select>";
             batchSizeCell.html(batchSelect);
 
