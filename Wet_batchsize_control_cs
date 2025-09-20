@@ -52,9 +52,6 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         // 每次都註冊JS，避免事件遺失
         RegisterClientScript();
 
-        // 更新篩選條件顯示
-        UpdateFilterDisplay();
-
         if (IsPostBack)
         {
 
@@ -109,6 +106,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
                 Session.Remove("Message");
                 Session.Remove("MessageCss");
             }
+            // 更新篩選條件顯示
+            UpdateFilterDisplay();
+
             InitializePage();
             LoadData();
         }
@@ -229,19 +229,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         try
         {
             // 如果使用者直接在 filterCondition.Value 輸入條件，就解析它
-            if (!string.IsNullOrEmpty(filterConditions.Value))
+            string manualCondition = (filterConditions.Value ?? "").Trim();
+            if (!string.IsNullOrEmpty(manualCondition))
             { 
                 FilterConditions.Clear();
 
-                FilterCondition directCondition = new FilterCondition
-                {
-                    Field = "",
-                    Operator = "",
-                    Value = filterConditions.Value,
-                    Logic = ""
-                };
-
-                FilterConditions.Add(directCondition);
+                FilterConditions.Add(new FilterCondition("","",manualCondition,""));
             
             }
             LoadData();
@@ -259,6 +252,9 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         {
             FilterConditions.Clear();
             filterConditions.Value = "";
+
+            UpdateFilterDisplay();
+
             LoadData();
             ShowMessage("篩選條件已清除", "alert-info");
         }
@@ -449,9 +445,18 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             }
         }
 
+        else
+        {
+            if (!minWafer.HasValue)
+            {
+                errors.Add("MIN_WAFER_COUNT 不能為空");
+            }
+        }
+
         if (errors.Count > 0)
         {
             ShowMessage("更新驗證錯誤:<br>" + string.Join("<br>", errors.ToArray()), "alert-danger");
+            return;
         }
         
         
@@ -524,6 +529,13 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private void UpdateFilterDisplay()
     {
+        if (FilterConditions.Count == 1 && string.IsNullOrEmpty(((FilterCondition)FilterConditions[0]).Field))
+        {
+            // 使用者輸入完整SQL條件，直接顯示
+            filterConditions.Value = ((FilterCondition)FilterConditions[0]).Value;
+            return;
+        }
+
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < FilterConditions.Count; i++)
         {
@@ -644,12 +656,19 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             int waferCount;
             if (!int.TryParse(tbx_min_wafer_cnt.Value, out waferCount) || waferCount < 0)
                 errors.Add("MIN_WAFER_COUNT 必須是非負整數");
-            else {
+            else
+            {
                 if (batch_size.Value == "1" && (waferCount < 1 || waferCount > 25))
                     errors.Add("單批設定，min wafer count需介於1到25片");
                 else if (batch_size.Value == "2" && (waferCount < 2 || waferCount > 50))
                     errors.Add("雙批設定，min wafer count需介於2到50片");
+                else if (batch_size.Value == "0" && (waferCount < 1 || waferCount > 50))
+                    errors.Add("min wafer count需介於1到50片");
             }
+        }
+        else 
+        {
+            errors.Add("MIN_WAFER_COUNT 不能為空");
         }
 
         if (errors.Count > 0)
@@ -893,6 +912,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
         switch (batchSize.ToString())
         {
+            case "0": return "無限制";
             case "1": return "單批";
             case "2": return "雙批";
             default: return batchSize.ToString();
