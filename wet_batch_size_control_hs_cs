@@ -1,0 +1,483 @@
+
+using System;
+using System.Collections;
+using System.Data;
+using System.Data.OleDb;
+using System.Text;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Configuration;
+using P12RTD_DLL;
+using LoginCheckServiceProvider;
+using System.Runtime.Remoting.Messaging;
+using System.Net.Cache;
+using System.Diagnostics.Eventing.Reader;
+using System.Runtime.Remoting.Contexts;
+using System.Collections.Specialized;
+using System.Linq;
+
+public partial class WetBatchSizeControl : System.Web.UI.Page
+{
+    string vCheckResult;
+    string vFunctionName = "WET_BATCH_SIZE_CONTROL";
+    string vTableName = "RTD.WET_BATCH_SIZE_CONTROL_LOG";
+    string ConnectionString = ConfigurationSettings.AppSettings["RTD_P12"];
+    Access_control RTD_ACCESS_CONTROL = new Access_control();
+    Table_Info_control RTD_TABLE_INFO = new Table_Info_control();
+
+    // 篩選條件集合
+    private ArrayList FilterConditions
+    {
+        get
+        {
+            if (Session["FilterConditions"] == null)
+                Session["FilterConditions"] = new ArrayList();
+            return (ArrayList)Session["FilterConditions"];
+        }
+        set
+        {
+            Session["FilterConditions"] = value;
+        }
+    }
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+
+        // 每次都註冊JS，避免事件遺失
+        RegisterClientScript();
+
+        if (IsPostBack)
+        {
+
+            string target = Request["__EVENTTARGET"] ?? "";
+            string arg = Request["__EVENTARGUMENT"] ?? "";
+
+            if (target == "AddFilter")
+            {
+                System.Diagnostics.Debug.WriteLine("PostBack => AddFilter, arg=" + arg);
+                Page.ClientScript.RegisterStartupScript(this.GetType(), "debugAddFilter", string.Format("console.log('後端已執行 AddFilterCondition，arg={0}');", arg), true);
+                AddFilterCondition(arg);
+                //InitializePage();
+                return;
+            }
+        }
+
+        if (!IsPostBack)
+        {
+            if (Session["Message"] != null)
+            {
+                ShowMessage(Session["Message"].ToString(), Session["MessageCss"].ToString());
+                Session.Remove("Message");
+                Session.Remove("MessageCss");
+            }
+
+            // 更新篩選條件顯示
+            UpdateFilterDisplay();
+
+            InitializePage();
+            LoadData();
+        }
+
+    }
+
+    private void InitializePage()
+    {
+        UpdateLastUpdateTime();
+    }
+
+    private void UpdateLastUpdateTime()
+    {
+        DataSet ds_temp = new DataSet();
+        ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
+        string lastUpdateTime = ds_temp.Tables[vFunctionName].Rows[0]["Last_Update_time"].ToString();
+
+        string timeScript = @"
+            if (document.getElementById('lastUpdateTime')) {
+                document.getElementById('lastUpdateTime').innerHTML = '" + lastUpdateTime + @"';
+            }";
+        ClientScript.RegisterStartupScript(this.GetType(), "updateTime", timeScript, true);
+    }
+
+    private void RegisterClientScript()
+    {
+        // 只註冊一次 jQuery
+        if (!Page.ClientScript.IsClientScriptIncludeRegistered("jquery"))
+        {
+            Page.ClientScript.RegisterClientScriptInclude(
+                "jquery",
+                ResolveUrl("~/script/jquery-3.7.0.min.js")
+            );
+        }
+
+        // 註冊全域函數供 ASP.NET PostBack 使用
+        string globalScript = @"
+            window.deleteRecord = function(id) {
+                if (typeof __doPostBack === 'function') {
+                    __doPostBack('DeleteRecord', id);
+                } else {
+                    console.warn('__doPostBack not available');
+                }
+            };
+            
+            window.updateActive = function(id, isChecked) {
+                if (confirm('確定要變更此設定的啟用狀態嗎?')) {
+                    var arg = id + '|' + (isChecked ? 'true' : 'false');
+                    if (typeof __doPostBack === 'function') {
+                        __doPostBack('UpdateActive', arg);
+                    }
+                    else {
+                        console.warn('__doPostBack not available');
+                    }
+                }
+                else {
+                    // 用戶取消，還原為原始狀態
+                    event.target.checked = !isChecked;
+                }
+            };
+        ";
+
+        Page.ClientScript.RegisterStartupScript(
+            this.GetType(),
+            "GlobalFunctions",
+            globalScript,
+            true
+        );
+    }
+
+
+    protected void btnExecuteFilter_ServerClick(object sender, EventArgs e)
+    {
+        try
+        {
+            // 如果使用者直接在 filterCondition.Value 輸入條件，就解析它
+            string manualCondition = (filterConditions.Value ?? "").Trim();
+            if (!string.IsNullOrEmpty(manualCondition))
+            {
+                FilterConditions.Clear();
+
+                FilterConditions.Add(new FilterCondition("", "", manualCondition, ""));
+
+            }
+            LoadData();
+            ShowMessage("篩選執行完成，共 " + FilterConditions.Count + " 個條件", "alert-info");
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("篩選執行失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
+    protected void btnClearFilter_ServerClick(object sender, EventArgs e)
+    {
+        try
+        {
+            FilterConditions.Clear();
+            filterConditions.Value = "";
+
+            UpdateFilterDisplay();
+
+            LoadData();
+            ShowMessage("篩選條件已清除", "alert-info");
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("清除篩選條件失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
+    private void AddFilterCondition(string conditionData)
+    {
+        // 驗證輸入值
+        if (string.IsNullOrEmpty(conditionData))
+        {
+            ShowMessage("篩選條件資料為空!", "alert-warning");
+            return;
+        }
+
+        try
+        {
+            string[] parts = conditionData.Split('|');
+            if (parts.Length >= 4)
+            {
+                // 驗證條件值不為空
+                string value = parts[2] != null ? parts[2].Trim().ToUpper() : "";
+
+                if (string.IsNullOrEmpty(value))
+                {
+                    ShowMessage("請輸入篩選條件值!", "alert-warning");
+                    return;
+                }
+
+                FilterCondition condition = new FilterCondition(parts[0], parts[1], value, parts[3]);
+                FilterConditions.Add(condition);
+                UpdateFilterDisplay();
+
+                // 重新載入資料
+                LoadData();
+
+                ClientScript.RegisterStartupScript(this.GetType(), "clearFilter",
+                    "if (document.getElementById('filterValue')) { document.getElementById('filterValue').value = ''; }", true);
+
+                ShowMessage("篩選條件已新增: " + parts[0] + " " + GetOperatorText(parts[1] , value), "alert-success");
+            }
+
+            else
+            {
+                ShowMessage("篩選條件格式不正確!", "alert-danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("新增篩選條件失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
+    private void UpdateFilterDisplay()
+    {
+        if (FilterConditions.Count == 1 && string.IsNullOrEmpty(((FilterCondition)FilterConditions[0]).Field))
+        {
+            // 使用者輸入完整SQL條件，直接顯示
+            filterConditions.Value = ((FilterCondition)FilterConditions[0]).Value;
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < FilterConditions.Count; i++)
+        {
+            FilterCondition condition = (FilterCondition)FilterConditions[i];
+            if (i > 0)
+                sb.Append(" " + condition.Logic + " ");
+
+            string operatorText = GetOperatorText(condition.Operator, condition.Value);
+            sb.Append(condition.Field + " " + operatorText);
+        }
+        filterConditions.Value = sb.ToString();
+    }
+
+    private string GetOperatorText(string op, string val)
+    {
+        switch (op)
+        {
+            case "=": return "=" + " '" + val + "'";
+            case "!=": return "!=" + " '" + val + "'";
+            case ">": return ">" + " '" + val + "'";
+            case ">=": return ">=" + " '" + val + "'";
+            case "<": return "<" + " '" + val + "'";
+            case "<=": return "<=" + " '" + val + "'";
+            case "like_start": return "LIKE" + " '" + val + "%'";
+            case "like_end": return "LIKE" + " '%" + val + "'";
+            case "not_like_start": return "NOT LIKE" + " '" + val + "%'";
+            case "not_like_end": return "NOT LIKE" + " '%" + val + "'";
+            case "like": return "LIKE" + " '%" + val + "%'";
+            case "not_like": return "NOT LIKE" + " '%" + val + "%'";
+            default: return "=" + " '" + val + "'";
+        }
+    }
+
+    private void LoadData()
+    {
+        try
+        {
+            DataTable dt = GetBatchSizeData();
+
+            GenerateDataTable(dt);
+
+            DataSet ds_temp = new DataSet();
+            ds_temp = RTD_TABLE_INFO.Find_Data(vFunctionName);
+            string lastUploadTime = ds_temp.Tables[vFunctionName].Rows[0]["LAST_UPLOAD_2_RTD_TIME"].ToString();
+            string timeScript = @"
+                if (document.getElementById('lastUploadTime')) {
+                    document.getElementById('lastUploadTime').innerHTML = '" + lastUploadTime + @"';
+                }";
+            ClientScript.RegisterStartupScript(this.GetType(), "updateUploadTime", timeScript, true);
+        }
+        catch (Exception ex)
+        {
+            ShowMessage("載入資料失敗: " + ex.Message, "alert-danger");
+        }
+    }
+
+    private DataTable GetBatchSizeData()
+    {
+        using (OleDbConnection conn = new OleDbConnection(ConnectionString))
+        {
+            StringBuilder query = new StringBuilder(@"
+                SELECT 
+                    ACTION_TYPE, EQP_ID, PRODG_ID, PRODUCT_GROUP, PRODSPEC_ID, OPE_NO,
+                    BATCH_SIZE, MIN_WAFER_COUNT, MEMO, UPDATE_USER, UPDATE_TIME, ACTIVE, ID1
+                FROM RTD.WET_BATCH_SIZE_CONTROL_LOG");
+
+            if (FilterConditions.Count > 0)
+            {
+                query.Append(" WHERE ");
+                if (FilterConditions.Count == 1 && string.IsNullOrEmpty(((FilterCondition)FilterConditions[0]).Field))
+                {
+                    // 使用者手動輸入完整條件
+                    query.Append(((FilterCondition)FilterConditions[0]).Value);
+                }
+                else
+                {
+                    for (int i = 0; i < FilterConditions.Count; i++)
+                    {
+                        FilterCondition condition = (FilterCondition)FilterConditions[i];
+                        if (i > 0)
+                            query.Append(" " + condition.Logic + " ");
+                        //query.Append(BuildWhereClause(condition, i));
+                        string operatorText = GetOperatorText(condition.Operator, condition.Value);
+                        query.Append(condition.Field + " " + operatorText);
+                    }
+
+                }
+
+            }
+
+            query.Append(" ORDER BY UPDATE_TIME DESC");
+
+            OleDbCommand cmd = new OleDbCommand(query.ToString(), conn);
+
+            using (OleDbDataAdapter adapter = new OleDbDataAdapter(cmd))
+            {
+                DataTable dt = new DataTable();
+                conn.Open();
+                adapter.Fill(dt);
+                return dt;
+            }
+
+        }
+    }
+
+    private void GenerateDataTable(DataTable dt)
+    {
+        StringBuilder html = new StringBuilder();
+
+        // === 表頭 === 
+        html.Append("<table class='table-custom table-header'>");
+        html.Append("<thead><tr>");
+        html.Append("<th style='width: 50px;'>ACTION</th>");
+        html.Append("<th style='width: 70px;'>EQP_ID</th>");
+        html.Append("<th style='width: 80px;'>PRODG_ID</th>");
+        html.Append("<th style='width: 100px;'>PRODUCT_GROUP</th>");
+        html.Append("<th style='width: 100px;'>PRODSPEC_ID</th>");
+        html.Append("<th style='width: 70px;'>OPE_NO</th>");
+        html.Append("<th style='width: 80px;'>BATCH_SIZE</th>");
+        html.Append("<th style='width: 110px;'>MIN_WAFER_COUNT</th>");
+        html.Append("<th style='width: 130px;'>MEMO</th>");
+        html.Append("<th style='width: 100px;'>UPDATE_USER</th>");
+        html.Append("<th style='width: 100px;'>UPDATE_TIME</th>");
+        html.Append("<th style='width: 30px;'>啟用</th>");
+        html.Append("<th style='width: 16px; border:none;'></th>");
+        html.Append("</tr></thead>");
+        html.Append("</table>");
+
+        // === 表身 ===
+        html.Append("<div class='table-body-wrapper'>");
+        html.Append("<table class='table-custom table-body'><tbody>");
+        foreach (DataRow row in dt.Rows)
+        {
+            string id = row["ID1"].ToString();
+            bool isActive = Convert.ToBoolean(row["ACTIVE"]);
+
+            html.Append("<tr data-id='" + id + "'>");
+            html.Append("<td style='width: 50px;'>" + row["ACTION_TYPE"] + "</td>");
+            html.Append("<td style='width: 70px;'>" + row["EQP_ID"] + "</td>");
+            html.Append("<td style='width: 80px;'>" + row["PRODG_ID"] + "</td>");
+            html.Append("<td style='width: 100px;'>" + row["PRODUCT_GROUP"] + "</td>");
+            html.Append("<td style='width: 100px;'>" + row["PRODSPEC_ID"] + "</td>");
+            html.Append("<td style='width: 70px;'>" + row["OPE_NO"] + "</td>");
+            html.Append("<td style='width: 80px;'>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
+            html.Append("<td style='width: 110px;'>" + row["MIN_WAFER_COUNT"] + "</td>");
+            html.Append("<td style='width: 130px;'>" + row["MEMO"] + "</td>");
+            html.Append("<td style='width: 100px;'>" + row["UPDATE_USER"] + "</td>");
+            html.Append("<td style='width: 100px;'>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
+            html.Append("<td style='width: 30px;'>" + GetActiveText(row["ACTIVE"]) + "</td>");
+            //html.Append("<td class='modify-cell'>");
+            //html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") +
+            //           " onclick=\"updateActive('" + id + "', this.checked)\" />");
+            //html.Append("</td>");
+
+
+            html.Append("</tr>");
+        }
+
+        html.Append("</tbody></table>");
+        html.Append("</div>");
+
+        if (dt.Rows.Count == 0)
+        {
+            html.Clear();
+            html.Append("<div class='alert alert-info' style='text-align: center;'>目前沒有符合條件的資料</div>");
+        }
+
+        tableContainer.InnerHtml = html.ToString();
+    }
+
+    private string GetBatchSizeText(object batchSize)
+    {
+        if (batchSize == null || batchSize == DBNull.Value)
+            return "";
+
+        switch (batchSize.ToString())
+        {
+            case "0": return "無限制";
+            case "1": return "單批";
+            case "2": return "雙批";
+            default: return batchSize.ToString();
+        }
+    }
+
+    private string GetActiveText(object active)
+    {
+        if (active == null || active == DBNull.Value)
+            return "";
+
+        switch (active.ToString())
+        {
+            case "1": return "Y";
+            case "0": return "N";
+            default: return active.ToString();
+        }
+    }
+
+    private void ShowMessage(string message, string cssClass)
+    {
+        pnlMessage.Visible = true;
+        pnlMessage.CssClass = "alert " + cssClass;
+        lblMessage.Text = message;
+
+        string script = @"
+            setTimeout(function() {
+                var panel = document.getElementById('" + pnlMessage.ClientID + @"');
+                if (panel) {
+                    panel.style.display = 'none';
+                }
+            }, 3000);";
+        ClientScript.RegisterStartupScript(this.GetType(), "hideMessage", script, true);
+    }
+
+    // 篩選條件類別
+    public class FilterCondition
+    {
+        public string Field { get; set; }
+        public string Operator { get; set; }
+        public string Value { get; set; }
+        public string Logic { get; set; }
+
+        public FilterCondition()
+        {
+            Field = "";
+            Operator = "";
+            Value = "";
+            Logic = "";
+        }
+
+        public FilterCondition(string field, string op, string value, string logic)
+        {
+            Field = field ?? "";
+            Operator = op ?? "";
+            Value = value ?? "";
+            Logic = logic ?? "";
+        }
+    }
+}
