@@ -1,0 +1,583 @@
+
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="WetBatchSizeControl_hs.aspx.cs" Inherits="WetBatchSizeControl"%>
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head id="Head1" runat="server">
+    <META http-equiv="Content-Type" content="text/html; charset=big5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Wet Batchsize Control</title>
+    <link href="../css/bootstrap.flaty.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: #ecf0f1;
+        }
+        
+        .main-container {
+            max-width: 2000px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        
+        .panel-custom {
+            background-color: white;
+            border: none;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .panel-primary {
+            color: white;
+            border-radius: 6px 6px 0 0;
+            margin-bottom: 0;
+        }
+        
+        .panel-heading {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .status-info {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #7b8a8b;
+        }
+        
+        .status-info div {
+            margin-bottom: 5px;
+        }
+        
+        .section-header {
+            background: #b4bcc2;
+            color: white;
+            padding: 8px 15px;
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            border-radius: 4px;
+            font-size: 16px; 
+            
+            /*使用clearfix來清除浮動*/
+            overflow: hidden; /*觸發IE的hasLayout*/
+            zoom: 1;
+        }
+        
+        /*為IE6/7添加clearfix*/
+        .section-header:before,
+        .section-header:after {
+            content: "";
+            display: table;
+        }
+        
+        .section-header:after {
+            clear: both;
+        }
+        
+        /*僅針對.section-header下的h5進行樣式重置*/
+        .section-header h5 {
+            float: left; /*左浮動*/
+            margin: 0;
+            margin-right: 15px; /* 與右側內容保持間距 */
+            line-height: 32px; /* 與右側輸入框高度對齊 */
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            display: inline-block !important;
+            vertical-align: top;
+            font-size: 14px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            padding: 4px 8px;
+        }
+        
+        .form-control:focus {
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        
+        .form-control-sm {
+            height: 28px;
+        }
+        
+        /*輸入框尺寸*/
+        .input-small { width: 81px; }
+        .input-medium { width: 140px; }
+        .input-large { width: 150px; }
+        .input-xlarge { width: 200px; }
+        
+        .filter-section-container {
+            overflow: hidden;
+            zoom: 1;
+            margin: 15px 0;
+            vertical-align: middle;
+        }
+        
+        filter-section-container:before,
+        filter-section-container:after {
+            content: "";
+            display: table;
+        }
+        
+        filter-section-container:after {
+            clear: both;
+        }
+        
+        .filter-section {
+            float: left;
+            width: 45%;
+            padding: 5px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #b4bcc2;
+        }
+        
+        .filter-controls-row {
+            overflow: hidden;
+            zoom: 1;
+            margin-bottom: 15px;
+        }
+        
+        .filter-controls-row:before,
+        .filter-controls-row:after {
+            content: "";
+            display: table;
+        }
+        
+        .filter-controls-row:after {
+            clear: both;
+        }
+        
+        .filter-item 
+        {
+            float: left;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        
+        .filter-item:last-child 
+        {
+            margin-right: 0;
+        }
+        
+        /* 控制各個元件的寬度 */
+        .filter-item:nth-child(1) {width: 80px;} /* Filter label */
+        .filter-item:nth-child(2) {width: 140px;} /* 欄位選擇 */
+        .filter-item:nth-child(3) {width: 140px;} /* 運算子選擇 */
+        .filter-item:nth-child(4) {width: 140px;} /* 條件值輸入 */
+        .filter-item:nth-child(5) {width: 80px;} /* AND/OR */
+        .filter-item:nth-child(6) {width: 80px;} /* 新增按鈕 */
+         
+         .filter-conditions-display 
+        {
+            width: 100%;
+            height: 50px;
+            padding: 1px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            background-color: #fff;
+            font-family: 'Courier New', Consolas, Monospace;
+            font-size: 14px;
+            resize: vertical;
+            overflow-y: auto;
+            box-sizing: border-box;
+         }
+         
+        .filter-conditions-display:focus {
+            border-color: #2c3e50;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+            outline: none;
+         }
+         
+         /*篩選按扭區域*/
+         .filter-buttons {
+             text-align: right;
+             margin-top: 5px;
+         }
+         
+         .filter-buttons .btn
+         {
+             margin-left: 5px;
+         }
+        
+        .table-custom {
+            width: 100%;
+            font-size: 12px;
+            margin-top: 15px;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .table-header
+        {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .table-header th {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: bold;
+            border: none;
+        }
+        
+        .table-body-wrapper
+        {
+            width: 100%;
+            max-height: 1000px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+        
+        .table-body
+        {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .table-body td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #ecf0f1;
+            border-right: 1px solid #ecf0f1;
+        }
+        
+        .table-body tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .modify-cell {
+            background-color: #faf9fa !important;
+        }
+        
+        .modify-cell select {
+            font-size: 10px;
+            height: 24px;
+            padding: 2px 4px;
+        }
+        
+        .main-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* 載入狀態 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        /* 訊息樣式 */
+        .alert 
+        {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        
+        .alert-success {
+            color: #3c763d;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        
+        .alert-danger {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+        
+        .alert-warning {
+            color: #8a6d3b;
+            background-color: #fcf8e3;
+            border-color: #faebcc;
+        }        
+        
+        .alert-info {
+            color: #31708f;
+            background-color: #d9edf7;
+            border-color: #bce8f1;
+        }           
+        
+        /* IE 兼容性 */
+        .ie8 .form-control {
+            display: inline;
+            zoom: 1;
+        }
+        
+        .ie8 .filter-item,
+        .ie9 .filter-item {
+            display: block;
+            zoom: 1;
+        }
+        
+        .table-hover {
+            background-color: #f5f5f5 !important;
+        }
+        
+    </style>
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div class="main-container">
+            <div class="panel-custom main-content">
+                <!-- 標題區域 -->
+                <div class="panel-primary">
+                    <h1 class="panel-heading">WET BATCH SIZE CONTROL HISTORY</h1>
+                </div>
+            
+                <div class="panel-body">
+                    <!-- 狀態資訊 -->
+                    <div class="status-info">
+                        <span>最後更新時間: <span id="lastUpdateTime">2024-08-02 14:30:25</span></span> &nbsp;&nbsp;
+                        <span>最後上傳時間: <span id="lastUploadTime">2024-08-02 14:25:10</span></span> &nbsp;&nbsp;
+                        <span>網頁如有問題請call#6598</span>
+                    </div>
+                
+                    <!-- 訊息顯示區域 -->
+                    <asp:Panel id="pnlMessage" runat="server" visible="false" cssclass="alert">
+                        <asp:Label id="lblMessage" runat="server"></asp:Label>
+                    </asp:Panel>
+                
+                    <!-- 篩選區域 -->
+                    <div class="filter-section-container">
+                        <div class="filter-section">
+                            <div class="filter-controls-row">
+                                <div class="filter-item">
+                                    <label>Filter:</label>
+                                </div>
+                                <div class="filter-item">
+                                    <select id="filterField" runat="server" class="form-control form-control-sm input-medium">
+                                        <option value="EQP_ID">EQP_ID</option>
+                                        <option value="PRODG_ID">PRODG_ID</option>
+                                        <option value="PRODUCT_GROUP">PRODUCT_GROUP</option>
+                                        <option value="PRODSPEC_ID">PRODSPEC_ID</option>
+                                        <option value="OPE_NO">OPE_NO</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <select id="filterOperator" runat="server" class="form-control form-control-sm input-medium">
+                                        <option value="=">等於</option>
+                                        <option value="!=">不等於</option>
+                                        <option value=">">大於</option>
+                                        <option value=">=">大於等於</option>
+                                        <option value="<">小於</option>
+                                        <option value="<=">小於等於</option>
+                                        <option value="like_start">開頭以</option>
+                                        <option value="like_end">結尾以</option>
+                                        <option value="not_like_start">不開頭以</option>
+                                        <option value="not_like_end">不結尾以</option>
+                                        <option value="like">包含</option>
+                                        <option value="not_like">不包含</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <input type="text" id="filterValue" runat="server" placeholder="輸入條件值" class="form-control form-control-sm input-medium">
+                                </div>
+                                <div class="filter-item">
+                                    <select id="filterLogic" runat="server" class="form-control form-control-sm input-small">
+                                        <option value="AND">AND</option>
+                                        <option value="OR">OR</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <button type="button" id="btn_addFilter" onclick="addFilterCondition()" class="btn btn-success btn-sm">新增篩選</button>
+                                </div>
+                            </div>
+                        
+                            <!--篩選條件顯示區域-->
+                            <div class="filter-conditions-row">
+                                <textarea id="filterConditions" runat="server" class="filter-conditions-display" placeholder="篩選條件"></textarea>
+                                <div class="filter-buttons">
+                                    <button type="submit" id="btn_executeFilter" runat="server" onserverclick="btnExecuteFilter_ServerClick" class="btn btn-default btn-sm">執行篩選</button>
+                                    <button type="submit" id="btn_clearFilter" runat="server" onserverclick="btnClearFilter_ServerClick" class="btn btn-primary btn-sm">清除條件</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <!-- 目前設定區域 -->
+                    <div class="section-header">Setting Record</div>
+                
+                    <div class="table-responsive">
+                        <div id="tableContainer" runat="server">
+                            <!-- 資料表內容由後端動態產生 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- JavaScript 功能 -->
+    <script type="text/javascript" src="../script/jquery-3.7.0.min.js"></script>
+    <script type="text/javascript">
+        // jQuery 載入後執行
+        $(document).ready(function () {
+            // 數字輸入驗證
+            $('#tbx_min_wafer_cnt').on('keypress', function (e) {
+                var charCode = (e.which) ? e.which : e.keyCode;
+                if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                    return false;
+                }
+                return true;
+            });
+
+            // IE 兼容的輸入驗證
+            $('#tbx_min_wafer_cnt').on('input propertychange', function () {
+                var value = this.value;
+                this.value = value.replace(/[^0-9]/g, '');
+            });
+
+            // 表格行 hover 效果
+            $('.table-custom tbody tr').hover(
+                function () {
+                    $(this).addClass('table-hover');
+                },
+                function () {
+                    $(this).removeClass('table-hover');
+                }
+            );
+        });
+
+        // 表單驗證函數
+        function validateForm() {
+            var required = ['txb_eqpid', 'txb_prodgid', 'tbx_prodgrp', 'tbx_prodspecid', 'tbx_openo'];
+            for (var i = 0; i < required.length; i++) {
+                var field = document.getElementById(required[i]);
+                if (!field || field.value == '') {
+                    alert('請填寫所有必填欄位!');
+                    if (field) field.focus();
+                    return false;
+                }
+            }
+
+            var batchSize = document.getElementById('batch_size');
+            if (!batchSize || batchSize.value == '') {
+                alert('請選擇Batch Size!');
+                if (batchSize) batchSize.focus();
+                return false;
+            }
+            return true;
+        }
+
+        // 新增篩選條件函數
+        function addFilterCondition() {
+            var field = document.getElementById('filterField').value;
+            var operator = document.getElementById('filterOperator').value;
+            var value = document.getElementById('filterValue').value;
+            var logic = document.getElementById('filterLogic').value;
+
+            // 去除前後空格
+            if (value.replace) {
+                value = value.replace(/^\s+|\s+$/g, '');
+            }
+
+            if (value == '') {
+                alert('請輸入篩選條件值!');
+                document.getElementById('filterValue').focus();
+                return;
+            }
+
+            // IE兼容的 PostBack
+            // 使用 __doPostBack 呼叫後端處理
+            if (typeof __doPostBack === 'function') {
+                __doPostBack('AddFilter', field + '|' + operator + '|' + value + '|' + logic);
+            }
+            else {
+                console.warn('__doPostBack not available');
+            }
+
+        }
+
+        // 修改按鈕點擊事件處理
+        function btnAddFilter_Click() {
+            addFilterCondition();
+        }
+
+        // 更新時間戳函數
+        function updateLastUpdateTime() {
+            var now = new Date();
+            var timeStr = now.getFullYear() + '-' +
+                          padZero(now.getMonth() + 1) + '-' +
+                          padZero(now.getDate()) + ' ' +
+                          padZero(now.getHours()) + ':' +
+                          padZero(now.getMinutes()) + ':' +
+                          padZero(now.getSeconds());
+            var element = document.getElementById('lastUpdateTime');
+            if (element) {
+                if (element.textContent !== undefined) {
+                    element.textContent = timeStr;
+                }
+                else {
+                    element.innerText = timeStr;
+                }
+            }
+        }
+
+        function padZero(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+
+        // 事件綁定函數
+        function addEventHandler(element, eventType, handler) {
+            if (element.addEventListener) {
+                element.addEventListener(eventType, handler, false);
+            }
+            else if (element.attachEvent) {
+                element.attachEvent('on' + eventType, handler);
+            }
+        }
+
+        // 頁面載入完成後執行
+        function pageLoad() {
+            // 設定數字驗證
+            var waferInput = document.getElementById('tbx_min_wafer_cnt');
+            if (waferInput) {
+                addEventHandler(waferInput, 'keypress', function (e) {
+                    var charCode = (e.which) ? e.which : e.keyCode;
+                    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                        if (e.preventDefault) {
+                            e.preventDefault();
+                        }
+                        else {
+                            e.returnValue = false;
+                        }
+                        return false;
+                    }
+                    return true;
+                });
+            }
+        }
+
+        // DOMContentLoaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            pageLoad();
+        }
+        else if (document.addEventListener) {
+            document.addEventListener('DOMContentLoaded', pageLoad);
+        }
+        else if (document.attachEvent) {
+            document.attachEvent('onreadystatechange', function () {
+                if (document.readyState === 'complete') {
+                    pageLoad();
+                }
+            });
+        }
+    </script>
+    </form>
+</body>
+</html>
