@@ -451,6 +451,10 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             {
                 errors.Add("MIN_WAFER_COUNT 不能為空");
             }
+            else if (minWafer.Value > 50 || minWafer.Value < 1)
+            {
+                errors.Add("MIN_WAFER_COUNT 需介於1到50片");
+            }
         }
 
         if (errors.Count > 0)
@@ -640,6 +644,18 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
             errors.Add("EQP_ID 不能為空");
         else if (txb_eqpid.Value == "*")
             errors.Add("EQP_ID 不能為*");
+        else 
+        {
+            string eqpid=txb_eqpid.Value.Trim().ToUpper();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(eqpid,@"W[A-Z][A-Z1-9*]"))
+            {
+                errors.Add("EQP_ID 格式異常");
+            }
+            if (!eqpid.Contains("*") && eqpid.Length <5)
+            {
+                errors.Add("EQP_ID 機台碼至少5碼");
+            }
+        }
         if (string.IsNullOrEmpty(txb_prodgid.Value))
             errors.Add("PRODG_ID 不能為空");
         if (string.IsNullOrEmpty(tbx_prodgrp.Value))
@@ -654,16 +670,14 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         if (!string.IsNullOrEmpty(tbx_min_wafer_cnt.Value))
         {
             int waferCount;
-            if (!int.TryParse(tbx_min_wafer_cnt.Value, out waferCount) || waferCount < 0)
-                errors.Add("MIN_WAFER_COUNT 必須是非負整數");
+            if (!int.TryParse(tbx_min_wafer_cnt.Value, out waferCount) || waferCount < 1 || waferCount > 50)
+                errors.Add("MIN_WAFER_COUNT 需介於1到50片");
             else
             {
                 if (batch_size.Value == "1" && (waferCount < 1 || waferCount > 25))
                     errors.Add("單批設定，min wafer count需介於1到25片");
                 else if (batch_size.Value == "2" && (waferCount < 2 || waferCount > 50))
                     errors.Add("雙批設定，min wafer count需介於2到50片");
-                else if (batch_size.Value == "0" && (waferCount < 1 || waferCount > 50))
-                    errors.Add("min wafer count需介於1到50片");
             }
         }
         else 
@@ -842,8 +856,12 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
 
     private void GenerateDataTable(DataTable dt)
     {
+
+        
         StringBuilder html = new StringBuilder();
-        html.Append("<table class='table-custom'>");
+
+        // === 表頭 ===
+        html.Append("<table class='table-custom table-header'>");
         html.Append("<thead><tr>");
         html.Append("<th style='width: 80px;'>修改</th>");
         html.Append("<th style='width: 80px;'>EQP_ID</th>");
@@ -861,31 +879,34 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         html.Append("</tr></thead>");
         html.Append("<tbody>");
 
+        // === 表身 ===
+        html.Append("<div class='table-body-wrapper'>");
+        html.Append("<table class='table-custom table-body'><tbody>");
         foreach (DataRow row in dt.Rows)
         {
             string id = row["ID1"].ToString();
             bool isActive = Convert.ToBoolean(row["ACTIVE"]);
 
             html.Append("<tr data-id='" + id + "'>");
-            html.Append("<td class='modify-cell'>");
+            html.Append("<td class='modify-cell' style='width: 80px;'>");
             html.Append("<button type='button' class='btn btn-custom btn-sm btn-edit' onclick=\"enterEditMode(this)\">修改</button>");
             html.Append("<button type='button' class='btn btn-success btn-sm btn-save' style='display:none' onclick=\"saveRow(this)\">儲存</button>");
             html.Append("<button type='button' class='btn btn-danger btn-sm btn-del' style='display:none' " + "onclick=\"deleteRecord('" + row["ID1"] + "')\">刪除</button>");
             html.Append("<button type='button' class='btn btn-custom btn-sm btn-cancel' style='display:none' onclick=\"cancelEdit(this)\">取消</button>");
             html.Append("</td>");
 
-            html.Append("<td>" + row["EQP_ID"] + "</td>");
-            html.Append("<td>" + row["PRODG_ID"] + "</td>");
-            html.Append("<td>" + row["PRODUCT_GROUP"] + "</td>");
-            html.Append("<td>" + row["PRODSPEC_ID"] + "</td>");
-            html.Append("<td>" + row["OPE_NO"] + "</td>");
-            html.Append("<td class='batch-size'>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
-            html.Append("<td class='min-wafer'>" + row["MIN_WAFER_COUNT"] + "</td>");
-            html.Append("<td class='memo'>" + row["MEMO"] + "</td>");
-            html.Append("<td>" + row["UPDATE_USER"] + "</td>");
-            html.Append("<td>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
+            html.Append("<td style='width: 80px;'>" + row["EQP_ID"] + "</td>");
+            html.Append("<td style='width: 100px;'>" + row["PRODG_ID"] + "</td>");
+            html.Append("<td style='width: 120px;'>" + row["PRODUCT_GROUP"] + "</td>");
+            html.Append("<td style='width: 120px;'>" + row["PRODSPEC_ID"] + "</td>");
+            html.Append("<td style='width: 80px;'>" + row["OPE_NO"] + "</td>");
+            html.Append("<td class='batch-size' style='width: 80px;'>" + GetBatchSizeText(row["BATCH_SIZE"]) + "</td>");
+            html.Append("<td class='min-wafer' style='width: 100px;'>" + row["MIN_WAFER_COUNT"] + "</td>");
+            html.Append("<td class='memo' style='width: 150px;'>" + row["MEMO"] + "</td>");
+            html.Append("<td style='width: 80px;'>" + row["UPDATE_USER"] + "</td>");
+            html.Append("<td style='width: 140px;'>" + Convert.ToDateTime(row["UPDATE_TIME"]).ToString("yyyy-MM-dd HH:mm:ss") + "</td>");
 
-            html.Append("<td class='modify-cell'>");
+            html.Append("<td class='modify-cell' style='width: 60px;'>");
             html.Append("<input type='checkbox' " + (isActive ? "checked='checked'" : "") +
                        " onclick=\"updateActive('" + id + "', this.checked)\" />");
             html.Append("</td>");
@@ -895,6 +916,7 @@ public partial class WetBatchSizeControl : System.Web.UI.Page
         }
 
         html.Append("</tbody></table>");
+        html.Append("</div>");
 
         if (dt.Rows.Count == 0)
         {
