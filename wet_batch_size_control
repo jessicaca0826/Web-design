@@ -313,14 +313,38 @@
         
         .remarks-section {
             float: left;
-            width: 50%;
+            width: 25%;
             padding: 0 15px 20px;
+        }
+        
+        .remarks-text
+        {
+            background-color: #f8f9fa; /*淺灰背景*/
+            color: #495057; /*深灰文字*/
+            cursor: default; /*默認鼠標樣式*/
+            overflow-y: auto; /*內容過多時可滑動*/
+            line-height: 1.5; /*行距*/
+        }
+        
+        .bypass-spec-section {
+            float: left;
+            width: 30%;
+            /*padding: 0 15px 20px;*/
+        }
+        
+        .bypass-spec-text
+        {
+            background-color: white; /*白背景*/
+            color: #495057; /*深灰文字*/
+            cursor: default; /*默認鼠標樣式*/
+            overflow-y: auto; /*內容過多時可滑動*/
+            /*line-height: 1.5;*/ /*行距*/
         }
         
         .form-control-textarea {
             width: 100%;
             max-width: 400px;
-            height: 150px;
+            height: 230px;
             border: 1px solid #bdc3c7;
             border-radius: 3px;
             padding: 8px;
@@ -335,13 +359,16 @@
             outline: none;
         }
         
-        .remarks-text
-        {
-            background-color: #f8f9fa; /*淺灰背景*/
-            color: #495057; /*深灰文字*/
-            cursor: default; /*默認鼠標樣式*/
-            overflow-y: auto; /*內容過多時可滑動*/
-            line-height: 1.5; /*行距*/
+        .form-control-textarea2 {
+            width: 100%;
+            max-width: 400px;
+            height: 230px;
+            border: 1px solid white;
+            border-radius: 3px;
+            padding: 1px;
+            font-size: 12px;
+            resize: vertical;
+            display: block;
         }
         
         .table-custom {
@@ -355,7 +382,13 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        .table-custom th {
+        .table-header
+        {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .table-header th {
             background: #2c3e50;
             color: white;
             padding: 10px 8px;
@@ -364,14 +397,27 @@
             border: none;
         }
         
-        .table-custom td {
+        .table-body-wrapper
+        {
+            max-height: 50px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+        
+        .table-body
+        {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .table-body td {
             padding: 8px;
             text-align: center;
             border-bottom: 1px solid #ecf0f1;
             border-right: 1px solid #ecf0f1;
         }
         
-        .table-custom tbody tr:hover {
+        .table-body tbody tr:hover {
             background-color: #f8f9fa;
         }
         
@@ -524,7 +570,7 @@
                                 <option value="">請選擇</option>
                                 <option value="1">單批</option>
                                 <option value="2">雙批</option>
-                                <option value="0">無限制</option>
+                                <option value="0">*</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -599,12 +645,29 @@
                         <div class="remarks-section">
                             <div class="form-control-textarea remarks-text">
                                 <span style="color:#2c3e50 Red; font-weight:bold">Remarks:</span><br>
-                                1. <a href="http://pweb.twn.psc/rtd/wet/WetBatchSizeControl_hs.ASPX" target="_blank">歷史設定參考連結</a><br>
+                                1. <a href="http://pweb.twn.psc/rtd/wet/WetBatchSizeControl_hs.ASPX" target="_blank">歷史設定檔參考連結</a><br>
                                 2. PRODG_ID, PRODSPEC_ID, OPE_NO允許為<span style="font-weight:bold">*</span>或<span style="font-weight:bold">部分*</span><br>
                                 3. EQP_ID允許<span style="font-weight:bold">部分*</span>，但至少需輸入兩碼字元, 如:WW*, WF*, WWT52...)<br>
                                 <font color=red>4."*"使用不當可能造成WET機台無法派貨, 請謹慎使用!</font><br>
                                 5. 實際卡控不包含PRODUCT_GROUP 欄位，此欄位僅方便user分類使用。<br>
                                 6. 請同步至<a href="http://rbrptw01.twn.psc/module/WET/E0_Path_Instantly/E0D.aspx?module=WET&flowfab=owner&module_owner=P" target="_blank">Moduleweb RTD卡控的紀錄網頁</a>更新資料<br>
+                            </div>
+                        </div>
+                        <div class="bypass-spec-section">
+                            <div class="form-control-textarea2 bypass-spec-text">
+                                <span style="color:Red; font-weight:bold">Wet batchsize bypass spec:</span><br>
+                                1. Special lot(ASL pirun lot/ S1、S2 lot/ LSPO、DYB lot)<br>
+                                2. 已經batch的lot<br>
+                                3. qtime alarm lot<br>
+                                P12:<br>
+                                機台與lot在同廠: qtime alarm<br>
+                                機台與lot在對廠:<br> 
+                                - 兩廠都有path: qtime alarm 且 remaining_qtime>=0.5<br>
+                                - 只開對廠path: qtime alarm<br>
+                                P3/P5: qtime alarm<br>
+                                <small style="color:#253C78; font-weight:bold">* qtime alarm spec:</small><br>
+                                <small style="color:#253C78; font-weight:bold">P12: A grade < 3hr、B/C grade < 1.7hr</small><br>
+                                <small style="color:#253C78; font-weight:bold">P3/P5: A grade <= 3hrs、B/C grade <= 0.6hrs</small>
                             </div>
                         </div>
                     </div>
