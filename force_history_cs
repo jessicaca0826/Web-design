@@ -1,0 +1,100 @@
+using System;
+using System.Data.OleDb;
+using System.Data;
+using System.Web.Configuration;
+using System.Web;
+using System.Web.UI.WebControls;
+
+public partial class SmartSampling_force_history : System.Web.UI.Page
+{
+    OleDbConnection Conn = new OleDbConnection(WebConfigurationManager.ConnectionStrings["Readuser_RTD"].ConnectionString);
+    OleDbDataAdapter Adpt_temp;
+    DataSet ds= new DataSet();
+
+    protected void Page_Load(object sender, EventArgs e)
+    {
+
+        myDBInit();
+        if (GridView1.Rows.Count == 0)
+        {
+            Label1.Text = "查無force資料";
+            
+        }
+    }
+    
+    protected void myDBInit()
+    {
+
+        string eqp_id = GetRequestString(Request,"eqp_id");
+        string ct_g = GetRequestString(Request,"ct_g");
+        string prodg1 = GetRequestString(Request,"prodg1");
+        string ope_no = GetRequestString(Request,"ope_no");
+        string samp_ope_no = GetRequestString(Request,"samp_ope_no");
+        string id = GetRequestString(Request,"id");
+        string cate = GetRequestString(Request,"cate");
+        string recipe = GetRequestString(Request,"recipe");
+        string memo = GetRequestString(Request,"memo");
+        string sampling_rate = GetRequestString(Request,"sampling_rate");
+
+        OleDbDataAdapter myAdapter=null;
+        
+        if (!string.IsNullOrWhiteSpace(cate))
+        {
+            if (cate == "byEQP")
+            {
+                if (recipe != "")
+                    myAdapter = new OleDbDataAdapter("SELECT CATEGORY ,LOT_ID ,MAINPD_ID , SAMP_OP_NO AS OPENO, CUR_OPE_NO AS MAIN_OPENO, PRODG1, CLAIM_TIME, CLAIM_MEMO FROM RTD.V_FORCE_LOT WHERE claim_memo like '%"+eqp_id+";"+ct_g+";"+prodg1+";"+ope_no+";"+samp_ope_no+";"+sampling_rate+";"+recipe+";EWS//"+memo+"%' ORDER BY CLAIM_TIME DESC", Conn);
+                else
+                    myAdapter = new OleDbDataAdapter("SELECT CATEGORY ,LOT_ID ,MAINPD_ID , SAMP_OP_NO AS OPENO, CUR_OPE_NO AS MAIN_OPENO, PRODG1, CLAIM_TIME, CLAIM_MEMO FROM RTD.V_FORCE_LOT WHERE claim_memo like '%"+eqp_id+";"+ct_g+";"+prodg1+";"+ope_no+";"+samp_ope_no+";"+sampling_rate+";EWS//"+memo+"%' ORDER BY CLAIM_TIME DESC", Conn);
+            }
+
+            else if (cate == "byPM")
+            {
+                myAdapter = new OleDbDataAdapter("SELECT CATEGORY ,LOT_ID ,MAINPD_ID , SAMP_OP_NO AS OPENO, CUR_OPE_NO AS MAIN_OPENO, PRODG1, CLAIM_TIME, CLAIM_MEMO FROM RTD.V_FORCE_LOT WHERE claim_memo like '%"+id+"%' ORDER BY CLAIM_TIME DESC", Conn);
+            }
+           
+        }
+
+        else
+            myAdapter = new OleDbDataAdapter("SELECT CATEGORY ,LOT_ID ,MAINPD_ID , SAMP_OP_NO AS OPENO, CUR_OPE_NO AS MAIN_OPENO, PRODG1, CLAIM_TIME, CLAIM_MEMO FROM RTD.V_FORCE_LOT  ORDER BY CLAIM_TIME DESC ", Conn);
+
+        Response.Write("SQL:" + myAdapter.ToString());
+
+
+        DataSet ds = new DataSet();
+        try
+        {
+            myAdapter.Fill(ds, "select_DB");
+
+            GridView1.DataSource = ds;
+            GridView1.DataBind();
+
+        }
+        catch (Exception ex)
+        {
+            Response.Write("<HR/> Exception Error Message---- " + ex.ToString());
+
+        }
+
+
+
+        Conn.Close();
+    }
+
+    private static string GetRequestString(HttpRequest request, string key)
+    {
+        var val=request[key];
+        if (val == null)
+            return string.Empty;
+
+        return val.ToString().Trim();
+    }
+
+    public void dataGridPage(object sender ,DataGridPageChangedEventArgs e)
+    {
+	    GridView1.PageIndex = e.NewPageIndex;
+	    myDBInit();
+    }
+
+
+}
