@@ -1,0 +1,87 @@
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="force_history.aspx.cs" Inherits="SmartSampling_force_history" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Force History</title>
+    
+    <style type="text/css">
+        .td
+        {
+           border: thin dashed #FFFFFF ;
+            text-align: center;
+            }
+        
+        
+        .style6
+        {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        
+    </style>
+
+</head>
+<body>
+    <form id="form1" runat="server"  >
+    <div>
+        <div id="header">
+    <h1 class="style6">Force History</h1>
+        </div>
+    </div>
+    <div style="td">
+        <asp:Label ID="Label1" runat="server" ForeColor="Red" style="font-weight: 700"></asp:Label>
+    </div>
+    <div>
+    <asp:GridView ID="GridView1" runat="server" AllowPaging="True" OnPageIndexChanged="dataGridPage" 
+         EnableModelValidation="True" CellPadding="4" 
+            ForeColor="#333333" AutoGenerateColumns="False" >
+         <FooterStyle BackColor="#666699" Font-Bold="True" ForeColor="White" Wrap="True" Font-Names="Arial" HorizontalAlign="Center" />
+        <PagerStyle BackColor="#2461BF" ForeColor="White" HorizontalAlign="Center" Wrap="True" />
+        <SelectedRowStyle BackColor="#D1DDF1" Font-Bold="True" ForeColor="#333333" Wrap="True" />
+        <HeaderStyle BackColor="#507CD1" Font-Bold="True" ForeColor="White" Wrap="True" Font-Names="Arial"  />
+        <RowStyle BackColor="#EFF3FB" Font-Names="Arial" HorizontalAlign="Center"/>
+         <Columns>
+             <asp:BoundField DataField="CATEGORY" HeaderText="CATEGORY" 
+                 SortExpression="CATEGORY" />
+             <asp:BoundField DataField="LOT_ID" HeaderText="LOT_ID" 
+                 SortExpression="LOT_ID" />
+             <asp:BoundField DataField="MAINPD_ID" HeaderText="MAINPD_ID" 
+                 SortExpression="MAINPD_ID" />
+             <asp:BoundField DataField="OPENO" HeaderText="Sampling_OPENO" SortExpression="OPENO" />
+            <%-- <asp:BoundField DataField="CLAIM_USER" HeaderText="CLAIM_USER" 
+                 SortExpression="CLAIM_USER" />--%>
+             <asp:BoundField DataField="CLAIM_TIME" HeaderText="CLAIM_TIME" 
+                 SortExpression="CLAIM_TIME" />
+             <asp:BoundField DataField="CLAIM_MEMO" HeaderText="CLAIM_MEMO" 
+                 SortExpression="CLAIM_MEMO" />
+<%--             <asp:BoundField DataField="STORE_TIME" HeaderText="STORE_TIME" 
+                 SortExpression="STORE_TIME" />--%>
+         </Columns>
+        <EditRowStyle BackColor="#2461BF" />
+        <AlternatingRowStyle BackColor="White" Font-Names="Arial" HorizontalAlign="Center" />
+    </asp:GridView>
+    </div>
+    <asp:SqlDataSource ID="SqlDataSource1" runat="server" 
+        ConnectionString="<%$ ConnectionStrings:Readuser_RTD %>" 
+        ProviderName="<%$ ConnectionStrings:Readuser_RTD.ProviderName %>" 
+        SelectCommand="SELECT CATEGORY,LOT_ID,MAINPD_ID,OPENO,MAIN_OPENO,PRODG1,CLAIM_USER,CLAIM_TIME,CLAIM_MEMO,STORE_TIME FROM RTD.CHSMARTSAMPINFOREGHS WHERE ((CLAIM_MEMO LIKE '%EWS%') AND EQP_ID=? AND openo=@SAMPLING_OPE_NO ORDER BY CLAIM_TIME DESC">
+        <SelectParameters>
+            
+            <asp:QueryStringParameter Name="EQP_ID" QueryStringField="eqp_id" 
+                Type="String" />
+            <asp:QueryStringParameter Name="CT_G" QueryStringField="ct_g" 
+                Type="String" />
+            <asp:QueryStringParameter Name="PRODG1" QueryStringField="prodg1" 
+                Type="String" />
+                <asp:QueryStringParameter Name="OPE_NO" QueryStringField="ope_no" 
+                Type="String" />
+                <asp:QueryStringParameter Name="SAMPLING_OPE_NO" QueryStringField="samp_ope_no" 
+                Type="String" />
+        </SelectParameters>
+    </asp:SqlDataSource>
+   
+    </form>
+</body>
+</html>
