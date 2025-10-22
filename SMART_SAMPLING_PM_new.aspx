@@ -1,4 +1,4 @@
-<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Smart_Sampling_PM_new.aspx.cs" Inherits="SmartSampling_PM" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Smart_Sampling_PM_new_251017.aspx.cs" Inherits="SmartSampling_PM" %>
 <%@ Register TagPrefix="PSC_MFG" TagName="ColorSet" Src="..\global\ColorSet_RTD.ascx" %>
 <%@ import namespace="System.Net.Sockets"%>
 <%@ import namespace="System.Net"%>
@@ -324,16 +324,19 @@
         </tr>
 	</table>
     <asp:Button ID="del_exe" runat="server" OnClick="delete_all" Text="刪除" />
-    <br/>    
         <asp:GridView ID="GridView3" runat="server" AutoGenerateColumns="False" 
             EnableModelValidation="True" AllowSorting="True"  
             OnSorting="gridview3_sorting" CssClass="DataGridCss"
-            onrowdatabound="GridView3_RowDataBound">
+            onrowdatabound="GridView3_RowDataBound"
+            OnRowEditing="GridView3_RowEditing"
+            OnRowUpdating="GridView3_RowUpdating"
+            OnRowCancelingEdit="GridView3_RowCancelingEdit"
+            DatakeyNames="ID,EQP_ID">
+
             <HeaderStyle BackColor="#A55129" Font-Size="12px" ForeColor="Black" Height="30px" />
             <Columns>                 
                  <asp:TemplateField HeaderText="select all">
-                        <HeaderTemplate>
-                            </font>                            
+                        <HeaderTemplate>                          
                             <asp:CheckBox ID="chk_all" runat="server" AutoPostBack="True" OnCheckedChanged="chk_all_CheckedChanged" />
                         </HeaderTemplate>                        
                         <ItemTemplate>
@@ -354,12 +357,20 @@
                 <asp:BoundField HeaderText="UPDATE USER" DataField="UPDATE_USER" SortExpression="UPDATE_USER"/>
                 <asp:BoundField HeaderText="UPDATE TIME" DataField="UPDATE_TIME" SortExpression="UPDATE_TIME"/>              
                 <asp:BoundField HeaderText="PRODG" DataField="Prodg" SortExpression="Prodg"/>
-                <asp:BoundField HeaderText="ID" DataField="ID" SortExpression="ID" ItemStyle-cssclass="hiddencol" HeaderStyle-CssClass="hiddencol">                
+                <asp:BoundField HeaderText="ID" DataField="ID" ItemStyle-cssclass="hiddencol" HeaderStyle-CssClass="hiddencol">                
                     <HeaderStyle CssClass="hiddencol"></HeaderStyle>
                     <ItemStyle CssClass="hiddencol"></ItemStyle>
                  </asp:BoundField>
-                <asp:BoundField HeaderText="FORCE STATUS" DataField="FORCE_STATUS" SortExpression="FORCE_STATUS" />
-                <asp:EditCommandColumn ButtonType="LinkButton" HeaderText="manu trace lot" EditText="新增" CancelText="取消" UpdateText="儲存" />
+                <asp:BoundField HeaderText="FORCE STATUS" DataField="FORCE_STATUS" SortExpression="FORCE_STATUS"/>
+                <asp:CommandField ShowEditButton="True" HeaderText="ADD" EditText="新增" CancelText="取消" UpdateText="儲存"/>
+                <asp:TemplateField HeaderText="MANU FORCE LOT">
+                    <ItemTemplate>
+                        <%# Eval("MANU_FORCE_LOT") %>
+                    </ItemTemplate>
+                    <EditItemTemplate>
+                        <asp:TextBox ID="txtManu" runat="server" Text='<%# Bind("MANU_FORCE_LOT") %>' Width="30px"/>
+                    </EditItemTemplate>
+                </asp:TemplateField>
                 <asp:TemplateField HeaderText="FH HISTORY" SortExpression="FH_HISTORY">
                         <ItemTemplate>
                             <asp:HyperLink ID="HyperLink1" runat="server" 
