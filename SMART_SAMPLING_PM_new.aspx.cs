@@ -1288,5 +1288,70 @@ public partial class SmartSampling_PM : Page
             }
         }
     }
+
+    protected void GridView3_RowEditing(object sender, GridViewEditEventArgs e)
+    {
+        // 進入編輯模式 (會把該列轉成 EditItemTemplate)
+        GridView3.EditIndex=e.NewEditIndex;
+        myDBInit();
+    }
+
+    protected void GridView3_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
+    {
+        // 取消編輯
+        GridView3.EditIndex=-1;
+        myDBInit();
+    }
+
+    protected void GridView3_RowUpdating(object sender, GridViewUpdateEventArgs e)
+    {
+        int rowIndex = e.RowIndex;
+
+        // 取得 Datakeys (確保 DataKeyNames裡 含有 "ID")
+        string id = "";
+        string EQP_ID = "";
+
+        if (GridView3.Datakeys != null && GridView3.Datakeys[rowIndex] != null)
+        {
+            object keyVal= GridView3.Datakeys[rowIndex].Values["ID"];
+            object eqpVal= GridView3.Datakeys[rowIndex].Values["EQP_ID"];
+            if (keyVal != null) id=keyVal.ToString();
+            if (eqpVal != null) EQP_ID=eqpVal.ToString();
+        }
+
+        GridViewRow row = GridView3.Rows[rowIndex];
+        TextBox txtManu = (TextBox)row.FindControl("txtManu");
+        if (txtManu == null)
+        {
+            ErrorLabel_a.Text = "找不到 MANU 輸入欄位(txtManu)，請確認EditItemTemplate是否包含ID='txtManu'";
+            return;
+        }
+
+        string manuValue=txtManu.Text.Trim();
+        if (string.IsNullOrEmpty(manuValue))
+        {
+            ErrorLabel_a.Text = "請輸入 MANU FORCE LOT 值";
+            return;
+        }
+
+
+        manuValue=manuValue.Replace("'","''");
+        string insert_sql = "INSERT INTO RTD.SMART_SAMPLING_MANU_FORCE_LOT (ID, EQP_ID, LOT_ID, UPDATE_USER, UPDATE_TIME) "
+                            + " VALUES ('" +id + "', '" + EQP_ID + "', '" + manuValue + "', '" + MMuserid.Text + "', SYSDATE)";
+        try
+        {
+            RTD_OraDB.Exec_IUD(insert_sql);
+            
+            // 退出編輯模式並重新綁定
+            GridView3.EditIndex = -1;
+            myDBInit();
+            ErrorLabel_a.Text = "新增成功";
+        }
+
+        catch (Exception ex)
+        {
+            ErrorLabel_a.Text = "儲存失敗: " + ex.Message;
+        }
+    }
    
 }
