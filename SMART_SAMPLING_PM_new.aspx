@@ -331,7 +331,7 @@
             OnRowEditing="GridView3_RowEditing"
             OnRowUpdating="GridView3_RowUpdating"
             OnRowCancelingEdit="GridView3_RowCancelingEdit"
-            DatakeyNames="ID,EQP_ID">
+            DataKeyNames="ID,EQP_ID">
 
             <HeaderStyle BackColor="#A55129" Font-Size="12px" ForeColor="Black" Height="30px" />
             <Columns>                 
@@ -343,29 +343,29 @@
                             <asp:CheckBox ID="chk_del" runat="server" />
                         </ItemTemplate>                      
                 </asp:TemplateField>
-                <asp:BoundField HeaderText="HOLD PCS" DataField="TOTAL_WAFER" SortExpression="TOTAL_WAFER"/>
-                <asp:BoundField HeaderText="EQP ID" DataField="EQP_ID" SortExpression="EQP_ID"/>
-                <asp:BoundField HeaderText="EVENT TYPE" DataField="EVENT_TYPE" SortExpression="EVENT_TYPE"/>
-                <asp:BoundField HeaderText="BASIC VOLUME" DataField="BASIC_VOLUME" SortExpression="BASIC_VOLUME"/>
-                <asp:BoundField HeaderText="FUTURE HOLD" DataField="FUTURE_HOLD" SortExpression="FUTURE_HOLD"/>
-                <asp:BoundField HeaderText="PM DURATION" DataField="PM_DURATION" SortExpression="PM_DURATION"/>
-                <asp:BoundField HeaderText="FORCE TYPE" DataField="FORCE_TYPE" SortExpression="FORCE_TYPE"/>
-                <asp:BoundField HeaderText="TRACK RECIPE" DataField="TRACK_RECIPE" SortExpression="TRACK_RECIPE" />
-                <asp:BoundField HeaderText="PRODSPEC ID" DataField="PRODSPEC_ID" SortExpression="PRODSPEC_ID" />
-                <asp:BoundField HeaderText="OPE NO" DataField="OPE_NO" SortExpression="OPE_NO" />
-                <asp:BoundField HeaderText="MEMO" DataField="MEMO" SortExpression="MEMO" />
-                <asp:BoundField HeaderText="UPDATE USER" DataField="UPDATE_USER" SortExpression="UPDATE_USER"/>
-                <asp:BoundField HeaderText="UPDATE TIME" DataField="UPDATE_TIME" SortExpression="UPDATE_TIME"/>              
-                <asp:BoundField HeaderText="PRODG" DataField="Prodg" SortExpression="Prodg"/>
+                <asp:BoundField HeaderText="HOLD PCS" DataField="TOTAL_WAFER" SortExpression="TOTAL_WAFER" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="EQP ID" DataField="EQP_ID" SortExpression="EQP_ID" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="EVENT TYPE" DataField="EVENT_TYPE" SortExpression="EVENT_TYPE" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="BASIC VOLUME" DataField="BASIC_VOLUME" SortExpression="BASIC_VOLUME" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="FUTURE HOLD" DataField="FUTURE_HOLD" SortExpression="FUTURE_HOLD" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="PM DURATION" DataField="PM_DURATION" SortExpression="PM_DURATION" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="FORCE TYPE" DataField="FORCE_TYPE" SortExpression="FORCE_TYPE" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="TRACK RECIPE" DataField="TRACK_RECIPE" SortExpression="TRACK_RECIPE" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="PRODSPEC ID" DataField="PRODSPEC_ID" SortExpression="PRODSPEC_ID" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="OPE NO" DataField="OPE_NO" SortExpression="OPE_NO" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="MEMO" DataField="MEMO" SortExpression="MEMO" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="UPDATE USER" DataField="UPDATE_USER" SortExpression="UPDATE_USER" READONLY="TRUE"/>
+                <asp:BoundField HeaderText="UPDATE TIME" DataField="UPDATE_TIME" SortExpression="UPDATE_TIME" READONLY="TRUE"/>              
+                <asp:BoundField HeaderText="PRODG" DataField="Prodg" SortExpression="Prodg" READONLY="TRUE"/>
                 <asp:BoundField HeaderText="ID" DataField="ID" ItemStyle-cssclass="hiddencol" HeaderStyle-CssClass="hiddencol">                
                     <HeaderStyle CssClass="hiddencol"></HeaderStyle>
                     <ItemStyle CssClass="hiddencol"></ItemStyle>
                  </asp:BoundField>
-                <asp:BoundField HeaderText="FORCE STATUS" DataField="FORCE_STATUS" SortExpression="FORCE_STATUS"/>
+                <asp:BoundField HeaderText="FORCE STATUS" DataField="FORCE_STATUS" SortExpression="FORCE_STATUS" READONLY="TRUE"/>
                 <asp:CommandField ShowEditButton="True" HeaderText="ADD" EditText="新增" CancelText="取消" UpdateText="儲存"/>
-                <asp:TemplateField HeaderText="MANU FORCE LOT">
+                <asp:TemplateField HeaderText="MANU FORCE LOT" Visible="false">
                     <ItemTemplate>
-                        <%# Eval("MANU_FORCE_LOT") %>
+                        <%# "" %>
                     </ItemTemplate>
                     <EditItemTemplate>
                         <asp:TextBox ID="txtManu" runat="server" Text='<%# Bind("MANU_FORCE_LOT") %>' Width="30px"/>
