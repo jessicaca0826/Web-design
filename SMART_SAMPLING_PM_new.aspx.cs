@@ -17,7 +17,8 @@ public partial class SmartSampling_PM : Page
     string vTableName = "RTD.SMART_SAMPLING_EQP_RECOVER";
     string vTableName_case = "RTD.SMART_SAMPLING_TRB_CASE";
     string vTableName_EQudata = "EQDM.EQ_UDATA";
-    string vTableName_recipe = "RTD.OPE_NO_LRECIPE_EQP";
+    string vTableName_recipe = "RTD.V_OPE_NO_LRECIPE_EQP";
+    string vTableName_manu_force_lot = "RTD.SMART_SAMPLING_MANU_FORCE_LOT";
     string vUsername, vPassword, vCheckResult;
 
 
@@ -969,6 +970,10 @@ public partial class SmartSampling_PM : Page
                           + "                  select distinct a.id,b.lot_id||';'||c.ope_no||';'||c.lot_proc_state as status"
                           + "                  from " + vTableName + " a, RTD.CHSMARTSAMPINFOREGHS b,ods.lot c"
                           + "                  where b.claim_memo like '%'||a.ID||'%' and b.category='FORCE SAMPLING' and substr(c.lot_id,1,6)||'.'||substr(c.lot_id,7,3)=b.lot_id"
+                          + "                  union all"
+                          + "                  select distinct a.id,a.lot_id||';'||b.ope_no||';'||b.lot_proc_state as status "
+                          + "                  from " +  vTableName_manu_force_lot + " a, ods.lot b "
+                          + "                  where replace(a.lot_id,'.','')=b.lot_id "
                           + "                  )"
                           + "              group by id"
                           + "             )b, "
@@ -998,6 +1003,15 @@ public partial class SmartSampling_PM : Page
         {
             ErrorLabel_a.Text = "Other Error : " + ex.ToString();
             return;
+        }
+
+        if (DS.Tables.Contains("LIST"))
+        {
+            DataTable dt = DS.Tables["LIST"];
+            if (!dt.Columns.Contains("MANU_FORCE_LOT"))
+            {
+                dt.Columns.Add("MANU_FORCE_LOT", typeof(string));
+            }
         }
 
         if ((ViewState["sorting"] == null) || (ViewState["SortField"] == null))
@@ -1292,66 +1306,87 @@ public partial class SmartSampling_PM : Page
     protected void GridView3_RowEditing(object sender, GridViewEditEventArgs e)
     {
         // 進入編輯模式 (會把該列轉成 EditItemTemplate)
-        GridView3.EditIndex=e.NewEditIndex;
+        GridView3.EditIndex = e.NewEditIndex;
+        ErrorLabel_a.Text = "";
+        if (MMuserid.Text == "")
+        {
+            //進行MM帳密驗證
+            Response.Write("<script> window.open('../MM_verification.aspx?action=insert1', '', config='height=250,width=350',toolbar=0,resizable=1) <" + HtmlTextWriter.SlashChar + "script>");
+        }
         myDBInit();
     }
 
     protected void GridView3_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
     {
         // 取消編輯
-        GridView3.EditIndex=-1;
+        GridView3.EditIndex = -1;
+        ErrorLabel_a.Text = "";
         myDBInit();
     }
 
     protected void GridView3_RowUpdating(object sender, GridViewUpdateEventArgs e)
     {
+        string vUsername = txt_id.Text;
+        string vPassword = txt_password.Text;
+
         int rowIndex = e.RowIndex;
 
         // 取得 Datakeys (確保 DataKeyNames裡 含有 "ID")
         string id = "";
         string EQP_ID = "";
 
-        if (GridView3.Datakeys != null && GridView3.Datakeys[rowIndex] != null)
+        if (GridView3.DataKeys != null && GridView3.DataKeys[rowIndex] != null)
         {
-            object keyVal= GridView3.Datakeys[rowIndex].Values["ID"];
-            object eqpVal= GridView3.Datakeys[rowIndex].Values["EQP_ID"];
-            if (keyVal != null) id=keyVal.ToString();
-            if (eqpVal != null) EQP_ID=eqpVal.ToString();
+            object keyVal = GridView3.DataKeys[rowIndex].Values["ID"];
+            object eqpVal = GridView3.DataKeys[rowIndex].Values["EQP_ID"];
+            if (keyVal != null) id = keyVal.ToString();
+            if (eqpVal != null) EQP_ID = eqpVal.ToString();
         }
 
         GridViewRow row = GridView3.Rows[rowIndex];
         TextBox txtManu = (TextBox)row.FindControl("txtManu");
         if (txtManu == null)
         {
-            ErrorLabel_a.Text = "找不到 MANU 輸入欄位(txtManu)，請確認EditItemTemplate是否包含ID='txtManu'";
+            ErrorLabel_a.Text = "找不到 MANU 輸入欄位(txtManu)請確認,EditItemTemplate是否包含ID='txtManu'";
             return;
         }
 
-        string manuValue=txtManu.Text.Trim();
+        string manuValue = txtManu.Text.Trim();
+
         if (string.IsNullOrEmpty(manuValue))
         {
             ErrorLabel_a.Text = "請輸入 MANU FORCE LOT 值";
             return;
         }
 
+        manuValue = manuValue.Replace("'", "''");
 
-        manuValue=manuValue.Replace("'","''");
-        string insert_sql = "INSERT INTO RTD.SMART_SAMPLING_MANU_FORCE_LOT (ID, EQP_ID, LOT_ID, UPDATE_USER, UPDATE_TIME) "
-                            + " VALUES ('" +id + "', '" + EQP_ID + "', '" + manuValue + "', '" + MMuserid.Text + "', SYSDATE)";
-        try
+        if (MMuserid.Text == "")
         {
-            RTD_OraDB.Exec_IUD(insert_sql);
-            
-            // 退出編輯模式並重新綁定
-            GridView3.EditIndex = -1;
-            myDBInit();
-            ErrorLabel_a.Text = "新增成功";
+            //進行MM帳密驗證
+            Response.Write("<script> window.open('../MM_verification.aspx?action=insert1', '', config='height=250,width=350',toolbar=0,resizable=1) <" + HtmlTextWriter.SlashChar + "script>");
         }
 
-        catch (Exception ex)
+        else
         {
-            ErrorLabel_a.Text = "儲存失敗: " + ex.Message;
+            string insert_sql = " INSERT INTO " + vTableName_manu_force_lot + " (ID, EQP_ID, LOT_ID, UPDATE_USER, UPDATE_TIME) "
+                            + " VALUES ('" + id + "', '" + EQP_ID + "', '" + manuValue + "', '" + MMuserid.Text + "', SYSDATE)";
+
+            try
+            {
+                RTD_OraDB.Exec_IUD(insert_sql);
+
+                // 退出編輯模式並重新綁定
+                GridView3.EditIndex = -1;
+                myDBInit();
+                ErrorLabel_a.Text = "新增成功";
+            }
+
+            catch (Exception ex)
+            {
+                ErrorLabel_a.Text = "儲存失敗: " + ex.Message;
+            }
         }
     }
-   
+
 }
